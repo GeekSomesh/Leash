@@ -1,0 +1,36 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+
+  --color-ink: #10213f;
+  --color-ink-soft: #3c4a63;
+  --color-muted: #6b7890;
+  --color-line: #dde3ec;
+  --color-paper: #f5f7fb;
+  --color-card: #ffffff;
+
+  --color-brand: #0b5fff;
+  --color-brand-deep: #0a2a66;
+
+  --color-pass: #0f8a5f;
+  --color-pass-soft: #e3f5ed;
+  --color-hold: #b26b00;
+  --color-hold-soft: #fff3dc;
+  --color-block: #c62d3a;
+  --color-block-soft: #fde7e9;
+  --color-info: #4b5b78;
+  --color-info-soft: #eef1f6;
+}
+
+html,
+body {
+  background: var(--color-paper);
+  color: var(--color-ink);
+}
+
+/* Text an attacker planted, highlighted wherever Leash quotes it. */
+.quote-mark {
+  background: linear-gradient(transparent 55%, #ffd8dc 55%);
+}
