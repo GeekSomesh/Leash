@@ -199,6 +199,14 @@ export function Console() {
                       This allowance was simulated before PayPal was connected. Reset the demo, then hold a real one in the PayPal sandbox.
                     </p>
                   )}
+                  {state?.mode.paypal === "sandbox" && !(state.mode.payoutEmails.merchants && state.mode.payoutEmails.people) && (
+                    <p className="rounded-lg bg-hold-soft px-3 py-2 text-hold">
+                      Sandbox payee emails aren&apos;t set yet, so Payouts will be skipped and logged. Add
+                      {" "}<code className="font-mono text-xs">DEMO_MERCHANT_FRESHCART_EMAIL</code>,{" "}
+                      <code className="font-mono text-xs">DEMO_MERCHANT_ORBITTOYS_EMAIL</code> and{" "}
+                      <code className="font-mono text-xs">DEMO_PERSON_ARJUN_EMAIL</code> to .env.local, then restart.
+                    </p>
+                  )}
                   <div className="flex flex-wrap gap-2">
                     {allowance.status === "active" && (
                       <button type="button" onClick={() => releaseAllowance(allowance.id)} disabled={busy !== null} className="rounded-lg border border-line px-3 py-1.5 font-semibold hover:bg-paper disabled:opacity-50">

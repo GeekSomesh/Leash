@@ -46,7 +46,13 @@ export type PaymentView = {
 };
 
 export type ConsoleState = {
-  mode: { paypal: "sandbox" | "simulated"; claude: boolean; database: "postgres" | "pglite" };
+  mode: {
+    paypal: "sandbox" | "simulated";
+    claude: boolean;
+    database: "postgres" | "pglite";
+    /** Sandbox payee emails for Payouts (DEMO_* variables). Missing emails mean payouts are skipped. */
+    payoutEmails: { merchants: boolean; people: boolean };
+  };
   payments: PaymentView[];
   allowances: {
     id: string;
@@ -81,7 +87,15 @@ export async function getConsoleState(db: Db): Promise<ConsoleState> {
 
   const mandates = await listMandates(db);
   return {
-    mode: { paypal: paypalConfigured() ? "sandbox" : "simulated", claude: claudeConfigured(), database: databaseKind() },
+    mode: {
+      paypal: paypalConfigured() ? "sandbox" : "simulated",
+      claude: claudeConfigured(),
+      database: databaseKind(),
+      payoutEmails: {
+        merchants: Boolean(process.env.DEMO_MERCHANT_FRESHCART_EMAIL && process.env.DEMO_MERCHANT_ORBITTOYS_EMAIL),
+        people: Boolean(process.env.DEMO_PERSON_ARJUN_EMAIL),
+      },
+    },
     payments,
     allowances: (await listAllowances(db)).map((a) => ({
       id: a.id,
