@@ -18,6 +18,8 @@ export async function explainDecision(input: {
   language: string;
   payerName: string;
   guardianName: string | null;
+  /** The final state when a held payment was approved or declined later, so the explanation matches what happened. */
+  resolvedStatus?: "declined" | "paid" | "failed";
 }): Promise<string> {
   const fallback = templateExplanation(input);
   if (!claudeConfigured()) return fallback;
@@ -26,6 +28,7 @@ export async function explainDecision(input: {
 Audience: ${input.audience === "payer" ? `${input.payerName}, who asked for the payment` : input.audience === "guardian" ? `${input.guardianName ?? "the guardian"}, who approves risky payments for ${input.payerName}` : `the owner, ${input.payerName}`}
 Payment: ${formatUsd(input.request.totalCents)} to ${input.request.payee.name}
 Decision: ${input.decision.outcome}
+${input.resolvedStatus ? `Resolved: ${input.resolvedStatus === "declined" ? "a person declined it and the hold was released" : input.resolvedStatus === "paid" ? "a person approved it and the payment went through" : "it failed before any money moved"}` : ""}
 Reasons: ${input.decision.reasons.join(" | ") || "all checks passed"}
 ${input.decision.hold?.scamSuspected ? "Scam suspected: yes" : ""}
 ${input.decision.hold?.coolingOffUntil ? `Held until at least: ${input.decision.hold.coolingOffUntil}` : ""}`;
@@ -39,15 +42,27 @@ ${input.decision.hold?.coolingOffUntil ? `Held until at least: ${input.decision.
 }
 
 /** The explanation used when Claude isn't configured or doesn't answer. */
-export function templateExplanation(input: { request: PaymentRequest; decision: Decision; guardianName: string | null }): string {
+export function templateExplanation(input: {
+  request: PaymentRequest;
+  decision: Decision;
+  guardianName: string | null;
+  resolvedStatus?: "declined" | "paid" | "failed";
+}): string {
   const amount = formatUsd(input.request.totalCents);
   const payee = input.request.payee.name;
+  if (input.resolvedStatus === "declined") {
+    return `Declined. The hold was released, so the money never left the account.`;
+  }
+  if (input.resolvedStatus === "failed") {
+    return `The payment didn't go through, so nothing was sent.`;
+  }
   switch (input.decision.outcome) {
     case "approve":
       return `Paid ${amount} to ${payee}.`;
     case "block":
       return `I didn't send ${amount} to ${payee}. ${input.decision.reasons[0] ?? ""}`.trim();
     case "hold":
+      if (input.resolvedStatus === "paid") return `Approved, and ${amount} was sent to ${payee}.`;
       if (input.decision.hold?.scamSuspected) {
         return `I've paused the ${amount} to ${payee}; nothing has been sent. This request has the signs of a common scam, so ${input.guardianName ?? "a trusted person"} will check it first.`;
       }

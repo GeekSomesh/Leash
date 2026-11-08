@@ -8,7 +8,7 @@ import { allowances, ledger } from "@/lib/db/schema";
 import { DEMO_IDS, resetDemo } from "@/lib/demo/seed";
 import { runScenario } from "@/lib/demo/scenarios";
 import { findAgentByToken } from "./queries";
-import { LeashError, resolveHeldPayment, voidAllowance, type ServiceOptions } from "./service";
+import { LeashError, refundPayment, resolveHeldPayment, voidAllowance, type ServiceOptions } from "./service";
 
 const NOW = new Date("2026-11-05T15:00:00Z");
 const options: ServiceOptions = { now: NOW, reviewer: null, simulatePayPal: true };
@@ -61,6 +61,8 @@ describe("payment service", () => {
     const declined = await resolveHeldPayment(db, { paymentId: payment.id, approverId: DEMO_IDS.priya, decision: "decline" }, options);
     expect(declined.status).toBe("declined");
     expect(await ledgerTypes(payment.id)).toEqual(["authorization", "void"]);
+    // The explanation no longer says the payment is paused: it matches what happened.
+    expect(declined.explanation).toBe("Declined. The hold was released, so the money never left the account.");
   });
 
   it("lets the guardian approve a held transfer after cooling off", async () => {
@@ -69,6 +71,7 @@ describe("payment service", () => {
     const approved = await resolveHeldPayment(db, { paymentId: payment.id, approverId: DEMO_IDS.priya, decision: "approve" }, later);
     expect(approved.status).toBe("paid");
     expect(await ledgerTypes(payment.id)).toEqual(["authorization", "capture", "payout"]);
+    expect(approved.explanation).toBe("Approved, and $2,000.00 was sent to Arjun.");
   });
 
   it("counts spending towards the task, so a second identical gift goes over the $40 task", async () => {
@@ -86,6 +89,21 @@ describe("payment service", () => {
     expect(voided.status).toBe("voided");
     const [entry] = await db.select().from(ledger).where(eq(ledger.type, "void"));
     expect(entry?.amountCents).toBe(15000 - 2336);
+  });
+
+  it("refunds a paid payment to the payer, owner only", async () => {
+    const payment = await runScenario(db, "groceries", options);
+    expect(payment.status).toBe("paid");
+
+    // Only the owner (Priya) can refund; the voice assistant's owner isn't her.
+    await expect(refundPayment(db, { paymentId: payment.id, requesterId: DEMO_IDS.ramesh }, options)).rejects.toMatchObject({ code: "forbidden" });
+
+    const refunded = await refundPayment(db, { paymentId: payment.id, requesterId: DEMO_IDS.priya }, options);
+    expect(refunded.status).toBe("refunded");
+    expect(await ledgerTypes(payment.id)).toEqual(["capture", "payout", "refund"]);
+
+    // A refunded payment has nothing left to refund.
+    await expect(refundPayment(db, { paymentId: payment.id, requesterId: DEMO_IDS.priya }, options)).rejects.toMatchObject({ code: "invalid_state" });
   });
 
   it("finds agents by their MCP token", async () => {

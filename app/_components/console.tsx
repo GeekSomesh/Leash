@@ -84,6 +84,7 @@ export function Console() {
 
   const runScenario = (name: ScenarioName) => act(`scenario-${name}`, async () => void (await post(`/api/scenarios/${name}`)));
   const resolve = (id: string, decision: "approve" | "decline") => act(`resolve-${id}`, async () => void (await post(`/api/payments/${id}/resolve`, { decision })));
+  const refund = (id: string) => act(`refund-${id}`, async () => void (await post(`/api/payments/${id}/refund`)));
   const reset = () => act("reset", async () => void (await post("/api/demo/reset")));
   const holdAllowance = () =>
     act("allowance", async () => {
@@ -208,7 +209,7 @@ export function Console() {
               <p className="rounded-xl border border-dashed border-line p-6 text-center text-sm text-muted">Run a scene to see Leash decide.</p>
             )}
             {state?.payments.map((payment) => (
-              <PaymentCard key={payment.id} payment={payment} onResolve={resolve} busy={busy !== null} />
+              <PaymentCard key={payment.id} payment={payment} onResolve={resolve} onRefund={refund} busy={busy !== null} />
             ))}
           </section>
 

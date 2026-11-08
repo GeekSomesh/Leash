@@ -24,6 +24,7 @@ import {
   captureAuthorization,
   createAuthorizeOrder,
   createPayout,
+  refundCapture,
   voidAuthorization,
 } from "@/lib/paypal/payments";
 import { newId, simulatedPayPalId } from "./ids";
@@ -117,6 +118,12 @@ export async function submitPayment(db: Db, agent: AgentRow, input: PaymentReque
 async function writeExplanation(db: Db, paymentId: string, agent: AgentRow, guardianName: string | null) {
   const payment = (await getPayment(db, paymentId))!;
   const owner = await getPerson(db, agent.ownerId);
+  // A held payment that was approved or declined later needs a new explanation: the old one
+  // still says it's paused, so it matches what actually happened instead.
+  const resolvedStatus =
+    payment.decision.outcome === "hold" && (payment.status === "declined" || payment.status === "paid" || payment.status === "failed")
+      ? payment.status
+      : undefined;
   const explanation = await explainDecision({
     request: payment.request,
     decision: payment.decision,
@@ -124,6 +131,7 @@ async function writeExplanation(db: Db, paymentId: string, agent: AgentRow, guar
     language: owner?.language ?? "English",
     payerName: owner?.name ?? "the owner",
     guardianName,
+    resolvedStatus,
   });
   await db.update(paymentRequests).set({ explanation }).where(eq(paymentRequests.id, paymentId));
 }
@@ -255,6 +263,7 @@ export async function resolveHeldPayment(
   const payment = await getPayment(db, input.paymentId);
   if (!payment) throw new LeashError("Payment not found.", "not_found");
   if (payment.status !== "held") throw new LeashError(`This payment is ${payment.status}, not waiting for approval.`, "invalid_state");
+  const guardian = await guardianFor(db, payment.ownerId);
 
   const approvers = await allowedApprovers(db, payment);
   if (!approvers.includes(input.approverId)) throw new LeashError("You can't approve this payment.", "forbidden");
@@ -270,6 +279,8 @@ export async function resolveHeldPayment(
       await recordLedger(db, { requestId: payment.id, type: "void", amountCents: payment.totalCents, paypalId: voidId, status: "VOIDED", simulated: payment.simulated, detail: "Hold released; the money never moved" });
     }
     await db.update(paymentRequests).set({ status: "declined", resolvedAt: now }).where(eq(paymentRequests.id, payment.id));
+    const agent = await agentOrThrow(db, payment.agentId);
+    await writeExplanation(db, payment.id, agent, guardian?.name ?? null);
     return (await getPayment(db, payment.id))!;
   }
 
@@ -282,6 +293,8 @@ export async function resolveHeldPayment(
   await db.update(paymentRequests).set({ status: "approved" }).where(eq(paymentRequests.id, payment.id));
   if (payment.kind === "purchase") await executePurchase(db, payment.id, options);
   else await captureTransfer(db, payment.id, options);
+  const agent = await agentOrThrow(db, payment.agentId);
+  await writeExplanation(db, payment.id, agent, guardian?.name ?? null);
   return (await getPayment(db, payment.id))!;
 }
 
@@ -292,6 +305,45 @@ export async function allowedApprovers(db: Db, payment: PaymentRow): Promise<str
   if (rule === "guardian" && guardian) return [guardian.id];
   if (rule === "owner_and_guardian" && guardian) return [payment.ownerId, guardian.id];
   return [payment.ownerId];
+}
+
+// --- Refunding a paid payment ---------------------------------------------------------------
+
+/**
+ * Returns a captured payment to the payer. Only the owner acts (from the console). The
+ * refund goes back to the payer's PayPal account; the allowance's captured counter is left
+ * as the ledger recorded it, since the money's round trip is visible there.
+ */
+export async function refundPayment(
+  db: Db,
+  input: { paymentId: string; requesterId: string },
+  options: ServiceOptions = {},
+): Promise<PaymentRow> {
+  const payment = await getPayment(db, input.paymentId);
+  if (!payment) throw new LeashError("Payment not found.", "not_found");
+  if (payment.status !== "paid") throw new LeashError(`This payment is ${payment.status}, so there is nothing to refund.`, "invalid_state");
+  if (input.requesterId !== payment.ownerId) throw new LeashError("Only the owner can refund this payment.", "forbidden");
+
+  try {
+    const refundId = payment.simulated
+      ? simulatedPayPalId("REFUND")
+      : (
+          await refundCapture(payment.paypalCaptureId!, {
+            amountCents: payment.totalCents,
+            noteToPayer: `Refund for ${payment.payeeName} through Leash (${payment.id})`,
+            requestId: `${payment.id}-refund`,
+          })
+        ).refundId;
+    await recordLedger(db, { requestId: payment.id, type: "refund", amountCents: payment.totalCents, paypalId: refundId, status: "COMPLETED", simulated: payment.simulated, detail: "Refunded to the payer" });
+    await db.update(paymentRequests).set({ status: "refunded", resolvedAt: options.now ?? new Date() }).where(eq(paymentRequests.id, payment.id));
+  } catch (error) {
+    if (error instanceof PayPalApiError) {
+      await fail(db, payment.id, `PayPal: ${error.issue ?? error.status} (debug id ${error.debugId ?? "n/a"})`);
+      return (await getPayment(db, payment.id))!;
+    }
+    throw error;
+  }
+  return (await getPayment(db, payment.id))!;
 }
 
 // --- Allowances --------------------------------------------------------------------------------

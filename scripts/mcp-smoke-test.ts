@@ -34,7 +34,9 @@ async function main() {
   const unauthenticated = await fetch(`${base}/api/mcp`, { method: "POST", headers: { "Content-Type": "application/json" }, body: "{}" });
   console.log(`Without a token the MCP endpoint answers ${unauthenticated.status} (expected 401).`);
 
-  const reset = await fetch(`${base}/api/demo/reset`, { method: "POST" });
+  // The demo reset is protected when LEASH_ADMIN_SECRET is set on the target app.
+  const adminHeaders: Record<string, string> = process.env.LEASH_ADMIN_SECRET ? { "x-admin-secret": process.env.LEASH_ADMIN_SECRET } : {};
+  const reset = await fetch(`${base}/api/demo/reset`, { method: "POST", headers: adminHeaders });
   if (!reset.ok) throw new Error(`Couldn't reset the demo: ${reset.status} ${await reset.text()}`);
   const { tokens } = (await reset.json()) as { tokens: Record<string, string> };
   const token = tokens["agent-gift"];

@@ -12,10 +12,12 @@ const AGENT_ICON: Record<string, string> = { shopping: "🛒", voice_assistant: 
 export function PaymentCard({
   payment,
   onResolve,
+  onRefund,
   busy,
 }: {
   payment: PaymentView;
   onResolve: (id: string, decision: "approve" | "decline") => void;
+  onRefund?: (id: string) => void;
   busy: boolean;
 }) {
   const [open, setOpen] = useState(payment.status === "blocked" || payment.status === "held");
@@ -66,6 +68,20 @@ export function PaymentCard({
             Open PayPal
           </a>
         </p>
+      )}
+
+      {payment.status === "paid" && onRefund && (
+        <div className="mt-3 flex flex-wrap items-center gap-2">
+          <button
+            type="button"
+            disabled={busy}
+            onClick={() => onRefund(payment.id)}
+            className="rounded-lg border border-line bg-card px-3 py-1.5 text-sm font-semibold hover:bg-paper disabled:opacity-50"
+          >
+            Refund {formatUsd(payment.totalCents)}
+          </button>
+          <span className="text-xs text-muted">Returns the money to {payment.ownerName}&apos;s PayPal account.</span>
+        </div>
       )}
 
       {held && (
