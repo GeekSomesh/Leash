@@ -10,6 +10,7 @@ import { allowedApprovers } from "@/lib/payments/service";
 import {
   activityItem,
   getPerson,
+  guardianFor,
   ledgerFor,
   listAgents,
   listAllowances,
@@ -68,6 +69,7 @@ export type ConsoleState = {
     name: string;
     kind: string;
     ownerName: string;
+    guardianName: string | null;
     rules: string[];
     policySource: string;
     mandates: { id: string; purpose: string; maxTotalCents: number; spentCents: number; status: string; expiresAt: string }[];
@@ -80,6 +82,12 @@ export async function getConsoleState(db: Db): Promise<ConsoleState> {
     // First run: load the demo world so the console is never empty.
     await resetDemo(db);
     agentRows = await listAgents(db);
+  }
+  const guardianNames = new Map<string, string>();
+  for (const { agent } of agentRows) {
+    if (guardianNames.has(agent.ownerId)) continue;
+    const guardian = await guardianFor(db, agent.ownerId);
+    if (guardian) guardianNames.set(agent.ownerId, guardian.name);
   }
 
   const payments: PaymentView[] = [];
@@ -111,6 +119,7 @@ export async function getConsoleState(db: Db): Promise<ConsoleState> {
       name: agent.name,
       kind: agent.kind,
       ownerName,
+      guardianName: guardianNames.get(agent.ownerId) ?? null,
       rules: describePolicy(agent.policy),
       policySource: agent.policySource,
       mandates: mandates

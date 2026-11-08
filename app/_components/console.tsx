@@ -15,6 +15,17 @@ const PAYPAL_BANNERS: Record<string, { text: string; tone: "good" | "bad" }> = {
   "missing-order": { text: "PayPal didn't say which order this was.", tone: "bad" },
 };
 
+type CompiledPolicy = { policy: unknown; plainEnglish: string[]; questions: string[] };
+
+type EditingRules = {
+  agentId: string;
+  agentName: string;
+  ownerName: string;
+  guardianName: string | null;
+  rules: string;
+  compiled: CompiledPolicy | null;
+};
+
 async function post(url: string, body?: unknown) {
   const res = await fetch(url, {
     method: "POST",
@@ -31,6 +42,8 @@ export function Console() {
   const [busy, setBusy] = useState<string | null>(null);
   const [message, setMessage] = useState<{ text: string; tone: "good" | "bad" } | null>(null);
   const [connect, setConnect] = useState<{ agentName: string; token: string; mcpUrl: string } | null>(null);
+  const [editing, setEditing] = useState<EditingRules | null>(null);
+  const [compileError, setCompileError] = useState<string | null>(null);
 
   const refresh = useCallback(async () => {
     const res = await fetch("/api/state", { cache: "no-store" });
@@ -81,6 +94,36 @@ export function Console() {
     act(`token-${id}`, async () => {
       const result = (await post(`/api/agents/${id}/token`)) as { token: string; mcpUrl: string };
       setConnect({ agentName, token: result.token, mcpUrl: result.mcpUrl });
+    });
+
+  const editRules = (agent: ConsoleState["agents"][number]) => {
+    setCompileError(null);
+    setEditing({ agentId: agent.id, agentName: agent.name, ownerName: agent.ownerName, guardianName: agent.guardianName, rules: agent.policySource, compiled: null });
+  };
+
+  const compileRules = async () => {
+    if (!editing) return;
+    setBusy("compile-rules");
+    setCompileError(null);
+    try {
+      const compiled = (await post("/api/policies/compile", {
+        rules: editing.rules,
+        agentName: editing.agentName,
+        ownerName: editing.ownerName,
+        guardianName: editing.guardianName,
+      })) as CompiledPolicy;
+      setEditing({ ...editing, compiled });
+    } catch (error) {
+      setCompileError(error instanceof Error ? error.message : String(error));
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  const saveRules = (id: string, compiled: CompiledPolicy, rules: string) =>
+    act(`save-rules-${id}`, async () => {
+      await post(`/api/agents/${id}/policy`, { policy: compiled.policy, policySource: rules });
+      setEditing(null);
     });
 
   const allowance = state?.allowances.find((a) => a.status === "active") ?? state?.allowances[0];
@@ -239,9 +282,14 @@ export function Console() {
                       <h3 className="font-semibold">{agent.name}</h3>
                       <p className="text-xs text-muted">Works for {agent.ownerName}</p>
                     </div>
-                    <button type="button" onClick={() => connectAgent(agent.id, agent.name)} disabled={busy !== null} className="shrink-0 rounded-md border border-line px-2 py-1 text-xs font-semibold hover:bg-paper disabled:opacity-50">
-                      Connect over MCP
-                    </button>
+                    <div className="flex shrink-0 gap-1">
+                      <button type="button" onClick={() => editRules(agent)} disabled={busy !== null} className="rounded-md border border-line px-2 py-1 text-xs font-semibold hover:bg-paper disabled:opacity-50">
+                        Edit rules
+                      </button>
+                      <button type="button" onClick={() => connectAgent(agent.id, agent.name)} disabled={busy !== null} className="rounded-md border border-line px-2 py-1 text-xs font-semibold hover:bg-paper disabled:opacity-50">
+                        Connect over MCP
+                      </button>
+                    </div>
                   </div>
                   <details className="mt-2">
                     <summary className="cursor-pointer text-xs font-semibold text-brand">Rules, as Leash enforces them</summary>
@@ -294,6 +342,76 @@ export function Console() {
                 Done
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {editing && (
+        <div role="dialog" aria-modal="true" aria-labelledby="edit-rules-title" className="fixed inset-0 z-10 flex items-center justify-center bg-ink/40 p-4">
+          <div className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-xl bg-card p-5 shadow-xl">
+            <h2 id="edit-rules-title" className="font-semibold">
+              Rules for {editing.agentName}, in plain English
+            </h2>
+            {!state?.mode.claude ? (
+              <p className="mt-3 rounded-lg bg-hold-soft px-3 py-2 text-sm text-hold">
+                Editing rules needs Claude, which isn&apos;t set up on this server. Add <code className="font-mono text-xs">ANTHROPIC_API_KEY</code> to .env.local and restart.
+              </p>
+            ) : (
+              <>
+                <p className="mt-1 text-sm text-muted">Write the rules the way you would say them. Claude compiles them into the policy Leash enforces, and reads it back before you save.</p>
+                <textarea
+                  value={editing.rules}
+                  onChange={(e) => setEditing({ ...editing, rules: e.target.value, compiled: null })}
+                  rows={6}
+                  aria-label="Plain-English rules"
+                  className="mt-3 w-full rounded-lg border border-line bg-paper px-3 py-2 text-sm"
+                />
+                {compileError && <p className="mt-2 rounded-lg bg-block-soft px-3 py-2 text-sm text-block">{compileError}</p>}
+                {editing.compiled && (
+                  <div className="mt-3 space-y-2">
+                    <p className="text-xs font-semibold uppercase tracking-wider text-muted">What Leash will enforce</p>
+                    <ul className="list-disc space-y-0.5 pl-4 text-sm text-ink-soft">
+                      {editing.compiled.plainEnglish.map((rule) => (
+                        <li key={rule}>{rule}</li>
+                      ))}
+                    </ul>
+                    {editing.compiled.questions.length > 0 && (
+                      <div className="rounded-lg bg-hold-soft px-3 py-2">
+                        <p className="text-xs font-semibold uppercase tracking-wider text-hold">Questions to check</p>
+                        <ul className="mt-1 list-disc space-y-0.5 pl-4 text-sm text-hold">
+                          {editing.compiled.questions.map((question) => (
+                            <li key={question}>{question}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                  </div>
+                )}
+                <div className="mt-4 flex flex-wrap justify-end gap-2">
+                  <button type="button" onClick={() => setEditing(null)} className="rounded-lg border border-line px-3 py-1.5 text-sm font-semibold hover:bg-paper">
+                    Cancel
+                  </button>
+                  <button type="button" onClick={() => void compileRules()} disabled={busy !== null || editing.rules.trim().length < 10} className="rounded-lg border border-line px-3 py-1.5 text-sm font-semibold hover:bg-paper disabled:opacity-50">
+                    {busy === "compile-rules" ? "Compiling…" : editing.compiled ? "Compile again" : "Compile with Claude"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => editing.compiled && saveRules(editing.agentId, editing.compiled, editing.rules)}
+                    disabled={busy !== null || !editing.compiled}
+                    className="rounded-lg bg-brand px-3 py-1.5 text-sm font-semibold text-white disabled:opacity-50"
+                  >
+                    {busy?.startsWith("save-rules") ? "Saving…" : "Save rules"}
+                  </button>
+                </div>
+              </>
+            )}
+            {!state?.mode.claude && (
+              <div className="mt-4 flex justify-end">
+                <button type="button" onClick={() => setEditing(null)} className="rounded-lg bg-brand px-3 py-1.5 text-sm font-semibold text-white">
+                  Close
+                </button>
+              </div>
+            )}
           </div>
         </div>
       )}
