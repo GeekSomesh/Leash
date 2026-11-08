@@ -15,7 +15,15 @@ try {
   // Optional.
 }
 
-const base = process.env.APP_BASE_URL ?? "http://localhost:3000";
+// The base URL is the operator's APP_BASE_URL (the app under test). Validate it before any
+// request is built from it: only http(s) is allowed.
+const base = (() => {
+  const url = new URL(process.env.APP_BASE_URL ?? "http://localhost:3000");
+  if (url.protocol !== "http:" && url.protocol !== "https:") {
+    throw new Error(`APP_BASE_URL must be an http(s) URL, got "${url.protocol}".`);
+  }
+  return url.toString().replace(/\/$/, "");
+})();
 
 function textOf(result: { content?: unknown }): string {
   const content = (result.content ?? []) as { type: string; text?: string }[];
