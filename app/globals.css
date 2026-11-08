@@ -34,3 +34,24 @@ body {
 .quote-mark {
   background: linear-gradient(transparent 55%, #ffd8dc 55%);
 }
+
+/* Keyboard focus is always visible. */
+:where(a, button, input, textarea, select, summary):focus-visible {
+  outline: 2px solid var(--color-brand);
+  outline-offset: 2px;
+}
+
+/* Soft pulse while the voice assistant listens; static when the user prefers reduced motion. */
+@media (prefers-reduced-motion: no-preference) {
+  .listening-ring {
+    animation: leash-pulse 1.8s ease-out infinite;
+  }
+}
+@keyframes leash-pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(11, 95, 255, 0.35);
+  }
+  100% {
+    box-shadow: 0 0 0 28px rgba(11, 95, 255, 0);
+  }
+}
