@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import type { ConsoleState } from "@/lib/console-state";
 import { SCENARIO_INFO, type ScenarioName } from "@/lib/demo/scenario-info";
@@ -147,6 +148,14 @@ export function Console() {
               <ModePill on label={state.mode.database === "postgres" ? "Postgres" : "Embedded Postgres"} />
             </div>
           )}
+          <nav aria-label="Leash pages" className="flex w-full gap-1 text-sm font-semibold">
+            <Link href="/assistant" className="rounded-lg px-3 py-1.5 text-white/85 hover:bg-white/10 hover:text-white">
+              🎙️ Voice assistant
+            </Link>
+            <Link href="/insights" className="rounded-lg px-3 py-1.5 text-white/85 hover:bg-white/10 hover:text-white">
+              📊 Insights
+            </Link>
+          </nav>
         </div>
       </header>
 
