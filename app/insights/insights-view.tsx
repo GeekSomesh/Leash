@@ -4,6 +4,7 @@
 // allowance is being used. Themed from Design.md's tokens (AG Grid theming API), with a
 // custom "leash meter" gauge widget.
 
+import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { AgGridReact } from "ag-grid-react";
@@ -75,9 +76,16 @@ const AGENT_COLS: ColDef<InsightsData["agents"][number]>[] = [
   { field: "paymentCount", headerName: "Payments", flex: 0.9, type: "rightAligned" },
 ];
 
-export function InsightsView() {
+// AG Studio renders in the browser only.
+const StudioReport = dynamic(() => import("./studio/studio-report"), {
+  ssr: false,
+  loading: () => <p className="text-sm text-muted">Loading the AG Studio report…</p>,
+});
+
+export function InsightsView({ licenseKey, aiEnabled }: { licenseKey?: string; aiEnabled: boolean }) {
   const [data, setData] = useState<InsightsData | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [tab, setTab] = useState<"report" | "tables">("report");
 
   const load = useCallback(async () => {
     setError(null);
@@ -131,7 +139,29 @@ export function InsightsView() {
       {error && <p className="mb-4 rounded-lg bg-block-soft px-4 py-3 text-sm text-block">{error}</p>}
       {!data && !error && <p className="text-sm text-muted">Loading…</p>}
 
-      {data && (
+      <div role="tablist" aria-label="Insights views" className="mb-4 flex gap-1 border-b border-line">
+        {(
+          [
+            ["report", "Report (AG Studio)"],
+            ["tables", "Tables (AG Grid)"],
+          ] as const
+        ).map(([id, label]) => (
+          <button
+            key={id}
+            type="button"
+            role="tab"
+            aria-selected={tab === id}
+            onClick={() => setTab(id)}
+            className={`-mb-px border-b-2 px-3 py-2 text-sm font-semibold ${tab === id ? "border-brand text-brand" : "border-transparent text-ink-soft hover:text-ink"}`}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+
+      {data && tab === "report" && <StudioReport data={data} licenseKey={licenseKey} aiEnabled={aiEnabled} />}
+
+      {data && tab === "tables" && (
         <div className="space-y-8">
           <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
             <Kpi label="Paid" value={`${kpis.paidCount} payments`} sub={formatUsd(kpis.paidCents)} tone="pass" />

@@ -83,6 +83,8 @@ export async function GET() {
       payments,
       checks,
       ledger: ledgerRows.map((e) => ({
+        id: e.id,
+        paymentId: e.requestId,
         type: e.type,
         amountCents: e.amountCents,
         status: e.status,

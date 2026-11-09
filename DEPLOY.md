@@ -20,8 +20,8 @@ In the Render dashboard → the `leash` service → **Environment** (all `sync: 
 | `PAYPAL_CLIENT_ID`, `PAYPAL_CLIENT_SECRET` | The sandbox REST app's credentials (developer.paypal.com) |
 | `PAYPAL_WEBHOOK_ID` | From the sandbox app's webhook settings, after step 3 |
 | `DEMO_MERCHANT_FRESHCART_EMAIL`, `DEMO_MERCHANT_ORBITTOYS_EMAIL`, `DEMO_PERSON_ARJUN_EMAIL` | Sandbox account emails that receive Payouts |
-| `ANTHROPIC_API_KEY` | Claude (review, explanations, policy compiler, voice parsing) |
-| `AG_STUDIO` | AG Studio licence, if using the Studio report |
+| `ANTHROPIC_API_KEY` | Claude (review, explanations, policy compiler, voice parsing, the insights analyst) |
+| `AG_STUDIO` | AG Studio licence key (optional: without it the `/insights` report runs as a trial with a watermark) |
 
 `APP_BASE_URL` does not need to be set: `lib/config.ts` falls back to `RENDER_EXTERNAL_URL`,
 which Render provides. `DATABASE_URL` comes from the blueprint.
@@ -41,6 +41,9 @@ which Render provides. `DATABASE_URL` comes from the blueprint.
 - Judge Mode: run scenes 1–4 on the hosted console; traces should show real PayPal ids (no `SIM-…`)
 - MCP from a terminal: `APP_BASE_URL=https://<host> npm run mcp:smoke`
 - Voice assistant page: `/assistant`; phone view: `/approve/<payment id>`; insights: `/insights`
+- Insights analyst: on `/insights`, press **Edit**, open the AI panel and send "What did Leash stop?".
+  A `502` from `/api/ai/studio` means Claude rejected the call: check `ANTHROPIC_API_KEY` and the
+  service logs. A `429` means the analyst's rate limit was hit.
 
 ## 5. If something breaks
 

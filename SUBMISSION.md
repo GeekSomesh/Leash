@@ -41,7 +41,10 @@ submission as a judge would (fresh browser, hosted URL, all four scenes).
    approval: it's over $200 and the call has scam signs). An unknown payee is never guessed: the assistant asks.
 5. Over MCP: the console's **Connect over MCP** dialog has per-agent configs, or run
    `APP_BASE_URL=https://<host> npm run mcp:smoke` from a clone.
-6. Insights: `/insights` — spend by agent, what Leash stopped, decisions, PayPal activity, leash meter.
+6. Insights: `/insights` is an AG Studio report. Click a bar or slice (say, "Gift agent") to filter the rest
+   of the page; the second page shows the PayPal ledger. Press **Edit** to see the Leash meter in the
+   widget menu and to open the AI panel. There, the Leash analyst (Claude) answers questions like "What
+   did Leash stop?" and can add a chart. **Tables (AG Grid)** shows the same data as grids.
 
 Sandbox buyer credentials for the approval step: `<BUYER EMAIL / PASSWORD or "use your own sandbox account">`.
 
@@ -52,16 +55,29 @@ Sandbox buyer credentials for the approval step: `<BUYER EMAIL / PASSWORD or "us
     fails closed;
   - plain explanations (owner, guardian, or the older adult; calm, never shaming);
   - plain-English → policy compiler (with a code-generated read-back of the exact JSON);
-  - voice-request parsing on `/assistant` (with a deterministic pattern fallback).
+  - voice-request parsing on `/assistant` (with a deterministic pattern fallback);
+  - the Leash analyst on `/insights`: an AG Studio agent whose turns run on Claude through
+    `/api/ai/studio` (read-only; it can add charts to the report but never touches money).
 - Claude Code assisted with writing code during the submission period.
 - Without an `ANTHROPIC_API_KEY` Leash still decides: the deterministic rules engine and fixed-pattern
   detectors cover every demo scene (the console says "Claude off").
 
 ## Sponsor tools used
 
-- **AG Grid Community** (`ag-grid-community` 36.2.0, `ag-grid-react` 36.2.0, MIT): the `/insights`
-  dashboard — spend by agent, "what Leash stopped" with reasons, decision grid, PayPal ledger, and a
-  custom SVG "leash meter" gauge widget; themed with the Theming API from Leash's design tokens.
+- **AG Studio** (`ag-studio` / `ag-studio-react` 3.0.0): the `/insights` report.
+  - **Data:** five linked data sources (payments, why Leash stopped them, the PayPal ledger, the
+    allowance, the agents), joined by relationships so a click on a "why stopped" bar filters the
+    payments too.
+  - **Report:** a pre-built two-page report: KPIs, spend by agent, decisions, why Leash stopped payments,
+    every decision, and PayPal money movements.
+  - **Custom widget:** the Leash meter, built on the widget API. It appears in the widget menu and is
+    described to the AI.
+  - **Theme:** Leash's colours and type through `studioTheme.withParams`.
+  - **AI:** the Studio Agent Framework with a custom LLM adapter, so the Leash analyst and AG Studio's
+    built-in agents run on Claude Opus 5.5 on the server.
+- **AG Grid Community** (`ag-grid-community` 36.2.0, `ag-grid-react` 36.2.0, MIT): the insights tables
+  (decisions, what Leash stopped, PayPal ledger, agents), themed with the Theming API from Leash's design
+  tokens.
 - **Render**: web service + Postgres via the `render.yaml` Blueprint (paid plans through Dec 15).
 
 ## Demo video script (2:50)
@@ -76,7 +92,8 @@ Sandbox buyer credentials for the approval step: `<BUYER EMAIL / PASSWORD or "us
   blocked; "nothing has been sent."
 - **1:30–2:10:** Scene 4 by voice on `/assistant` — the bail call, held with cooling-off; Priya's phone
   view with the quoted scam lines; Decline; the hold is released.
-- **2:10–2:30:** `/insights` on AG Grid — spend by agent, what Leash stopped, leash meter.
+- **2:10–2:30:** `/insights` on AG Studio: click "Gift agent" to filter the page, point at the Leash meter,
+  and ask the Leash analyst "What did Leash stop?"
 - **2:30–2:50:** how it's built (rules engine + detectors + Claude escalate-only; MCP server; PayPal
   authorizations, partial captures, voids, payouts, verified webhooks). Close on the tagline.
 
@@ -88,5 +105,7 @@ Sandbox buyer credentials for the approval step: `<BUYER EMAIL / PASSWORD or "us
 - [ ] Hosted URL + the testing instructions above
 - [ ] "Uses PayPal" — sandbox: Orders (authorize), partial captures, voids, Payouts, verified webhooks, MCP
 - [ ] "Uses AI" — Claude Opus 5.5 structured reviews, explanations, compiler, voice parsing
-- [ ] Sponsor questions: AG Grid (Community + Theming API + custom widget), Render
+- [ ] Sponsor questions: AG Studio (linked data sources, pre-built report, Leash meter custom widget, theme,
+      Claude agents through the Studio Agent Framework), AG Grid Community (tables), Render
+- [ ] Set `AG_STUDIO` on Render if you have a licence key, so the hosted report has no trial watermark
 - [ ] Team and built-during-hackathon attestation (started Nov 1, 2026)

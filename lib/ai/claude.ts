@@ -88,3 +88,40 @@ export async function askForText(input: { system: string; prompt: string; effort
   if (!text) throw new ClaudeUnavailableError("Claude returned no text.");
   return text;
 }
+
+export type AgentEffort = "low" | "medium" | "high" | "xhigh" | "max";
+
+/**
+ * One turn of an agent loop driven by someone else (AG Studio's agents): Claude sees the
+ * conversation and the tools, and answers with text and/or tool calls. The caller runs
+ * the tools and sends the results back on the next turn.
+ */
+export async function runToolTurn(input: {
+  system: string;
+  messages: Anthropic.Beta.BetaMessageParam[];
+  tools: Anthropic.Beta.BetaTool[];
+  /** Opus 5.5 rejects forced tool choice; steer from the system prompt instead. */
+  toolChoice: "auto" | "none";
+  effort: AgentEffort;
+  maxTokens?: number;
+  signal?: AbortSignal;
+}): Promise<Anthropic.Beta.BetaMessage> {
+  try {
+    return await claude().beta.messages.create(
+      {
+        model: CLAUDE_MODEL,
+        max_tokens: input.maxTokens ?? 16000,
+        betas: [FALLBACK_BETA],
+        fallbacks: "default",
+        system: input.system,
+        messages: input.messages,
+        ...(input.tools.length > 0 ? { tools: input.tools, tool_choice: { type: input.toolChoice } } : {}),
+        output_config: { effort: input.effort },
+      },
+      { signal: input.signal },
+    );
+  } catch (error) {
+    if (error instanceof Anthropic.APIError) throw new ClaudeUnavailableError(`Claude API error ${error.status ?? ""}: ${error.message}`);
+    throw error;
+  }
+}

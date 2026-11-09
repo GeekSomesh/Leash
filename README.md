@@ -29,8 +29,11 @@ adult (large text, high contrast, no jargon). It never guesses who to pay: it us
 says, an account a caller gave only when the person explicitly points at it ("to the PayPal he gave me"), or
 someone they've paid before; otherwise it asks. The console also has an **Edit rules** dialog (owners write
 rules in plain English, Claude compiles them, and a code-generated read-back shows exactly what will be
-enforced before saving) and an **Insights** dashboard (`/insights`) on AG Grid: spend by agent, what Leash
-stopped and why, decisions, PayPal activity, and a custom "leash meter" gauge of the allowance used.
+enforced before saving) and an **Insights** report (`/insights`) built with **AG Studio**: spend by agent,
+decisions, why Leash stopped payments, every decision and the PayPal ledger, where a click on any bar or
+slice filters the rest of the page. It has a custom **Leash meter** widget for how much of the allowance
+is used, and the **Leash analyst**, a Claude agent in AG Studio's AI panel that answers questions about
+the numbers and can add charts. The same data is also available as plain AG Grid tables.
 
 ## How it decides
 
@@ -104,8 +107,15 @@ against zod schemas.
   instructions.
 - **Explanations** (`lib/ai/explain.ts`): two calm sentences for the owner, the guardian, or the older adult
   whose payment was paused, in their language. Never shaming.
+- **Leash analyst** (`app/insights/studio/analyst.ts`): an agent in the insights report, built on AG
+  Studio's Agent Framework. AG Studio runs the agent loop in the browser. Each model turn goes to
+  `/api/ai/studio`, which `lib/ai/studio-turn.ts` maps to a Claude tool-use call, so the API key stays on
+  the server. The analyst reads the report's data through AG Studio's query tools and passes report edits
+  to AG Studio's built-in widget, page and data agents, which also run on Claude. It only reads and
+  explains: it can't approve or move money. Turns are rate-limited per client and overall.
 
 Without an `ANTHROPIC_API_KEY` Leash still works: the rules and detectors decide, and the console says so.
+Only the insights analyst is unavailable.
 
 ## Connect any agent over MCP
 
@@ -155,10 +165,16 @@ Open http://localhost:3000. The demo data loads on first visit.
 
 Set `ANTHROPIC_API_KEY` in `.env.local`.
 
+### AG Studio licence (optional)
+
+Without a licence key, AG Studio runs as a trial: everything works, with a watermark. To remove the
+watermark, put a key in `AG_STUDIO` (for a trial key, email info@ag-grid.com). AG Studio licence keys are
+meant to be sent to the browser.
+
 ## Tests
 
 ```bash
-npm test             # 78 tests: rules engine, detectors, decision pipeline, voice parsing and payee resolution, end-to-end on a real Postgres
+npm test             # 85 tests: rules engine, detectors, decision pipeline, voice parsing and payee resolution, AG Studio-to-Claude turn mapping, end-to-end on a real Postgres
 npm run typecheck
 npm run lint
 npm run mcp:smoke    # with the dev server running: connects over MCP like an agent (resets demo data)
@@ -174,8 +190,8 @@ webhook registration, hosted checks). Keep paid plans through the judging period
 
 | Criterion | What to look at |
 |---|---|
-| Technological implementation | PayPal authorizations, partial captures, voids, Payouts and verified webhooks, each needed by a flow; an MCP server; Claude structured outputs; a tested rules engine (78 tests). |
-| Design | The owner's console with a decision trace for every payment, the guardian's phone approval view, the voice assistant page for an older adult, the AG Grid insights dashboard, and Judge Mode for running the scenes. |
+| Technological implementation | PayPal authorizations, partial captures, voids, Payouts and verified webhooks, each needed by a flow; an MCP server; Claude structured outputs; a Claude agent inside AG Studio; a tested rules engine (85 tests). |
+| Design | The owner's console with a decision trace for every payment, the guardian's phone approval view, the voice assistant page for an older adult, the AG Studio insights report with its Leash meter and analyst, and Judge Mode for running the scenes. |
 | Potential impact | Agentic commerce stalls on trust: owners won't let agents spend if a web page can hijack them. People over 60 reported about $4.9B in fraud losses to the FBI in 2024. Leash is demonstrated end to end for both. |
 | Innovation | Treats prompt injection and scams as the same attack; task mandates; an allowance that is a PayPal hold, so unspent money is never charged; AI that can only escalate. |
 | Presentation | Four scenes, each with a clear villain, all runnable from Judge Mode. |
@@ -185,9 +201,10 @@ webhook registration, hosted checks). Keep paid plans through the judging period
 - **PayPal sandbox only.** The PayPal client is fixed to `api-m.sandbox.paypal.com`; there is no live mode.
 - **Built during the submission period** (started November 1, 2026). The commit history shows the work.
 - **Tools used:** Claude Opus 5.5 via the Anthropic API (policy compiler, payment review, explanations,
-  voice-request parsing). Claude Code helped write the code. Other open-source tools: Next.js, Drizzle ORM,
-  PGlite, the MCP TypeScript SDK and `mcp-handler` (Apache-2.0), zod, Tailwind CSS, AG Grid Community
-  (MIT) for the insights dashboard, Vitest.
+  voice-request parsing, the insights analyst). Claude Code helped write the code. AG Studio 3.0
+  (`ag-studio`, `ag-studio-react`; commercial, used as a trial or with the `AG_STUDIO` key) for the
+  insights report. Open-source tools: Next.js, Drizzle ORM, PGlite, the MCP TypeScript SDK and
+  `mcp-handler` (Apache-2.0), zod, Tailwind CSS, AG Grid Community (MIT) for the insights tables, Vitest.
 - PayPal's [hackathon boilerplate](https://github.com/paypaldev/hackathon-paypal-ag-grid-boilerplate) was
   used as a reference for API patterns; no code was copied from it.
 

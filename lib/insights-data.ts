@@ -26,6 +26,9 @@ export type InsightsCheck = {
 } & Pick<Check, "id" | "label" | "source" | "status" | "detail">;
 
 export type InsightsLedger = {
+  id: string;
+  /** The payment this money movement belongs to (null for allowance holds and releases). */
+  paymentId: string | null;
   type: string;
   amountCents: number;
   status: string;

@@ -56,7 +56,15 @@ export function AssistantView({ callerTranscript }: { callerTranscript: string }
   const [error, setError] = useState<string | null>(null);
   const [typed, setTyped] = useState("");
   const [callerNote, setCallerNote] = useState(callerTranscript);
-  const [showTyping, setShowTyping] = useState(!speechRecognition());
+  // The server can't know whether the browser has speech recognition, so the typing box starts
+  // closed (matching the server's HTML) and opens after mount when the browser can't listen.
+  const [showTyping, setShowTyping] = useState(false);
+  useEffect(() => {
+    const check = setTimeout(() => {
+      if (!speechRecognition()) setShowTyping(true);
+    }, 0);
+    return () => clearTimeout(check);
+  }, []);
   const recognition = useRef<RecognitionLike | null>(null);
 
   useEffect(() => () => recognition.current?.abort(), []);
