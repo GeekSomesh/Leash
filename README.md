@@ -25,7 +25,9 @@ an agent uses over MCP.
 
 Scene 4 can be performed **by voice**: the assistant page (`/assistant`) has one large mic button, speech
 recognition in, a calm spoken answer out (`speechSynthesis`), and a typed fallback — built for an older
-adult (large text, high contrast, no jargon). The console also has an **Edit rules** dialog (owners write
+adult (large text, high contrast, no jargon). It never guesses who to pay: it uses a PayPal email the person
+says, an account a caller gave only when the person explicitly points at it ("to the PayPal he gave me"), or
+someone they've paid before; otherwise it asks. The console also has an **Edit rules** dialog (owners write
 rules in plain English, Claude compiles them, and a code-generated read-back shows exactly what will be
 enforced before saving) and an **Insights** dashboard (`/insights`) on AG Grid: spend by agent, what Leash
 stopped and why, decisions, PayPal activity, and a custom "leash meter" gauge of the allowance used.
@@ -156,7 +158,7 @@ Set `ANTHROPIC_API_KEY` in `.env.local`.
 ## Tests
 
 ```bash
-npm test             # 68 tests: rules engine, detectors, decision pipeline, voice parsing, end-to-end on a real Postgres
+npm test             # 78 tests: rules engine, detectors, decision pipeline, voice parsing and payee resolution, end-to-end on a real Postgres
 npm run typecheck
 npm run lint
 npm run mcp:smoke    # with the dev server running: connects over MCP like an agent (resets demo data)
@@ -172,7 +174,7 @@ webhook registration, hosted checks). Keep paid plans through the judging period
 
 | Criterion | What to look at |
 |---|---|
-| Technological implementation | PayPal authorizations, partial captures, voids, Payouts and verified webhooks, each needed by a flow; an MCP server; Claude structured outputs; a tested rules engine (68 tests). |
+| Technological implementation | PayPal authorizations, partial captures, voids, Payouts and verified webhooks, each needed by a flow; an MCP server; Claude structured outputs; a tested rules engine (78 tests). |
 | Design | The owner's console with a decision trace for every payment, the guardian's phone approval view, the voice assistant page for an older adult, the AG Grid insights dashboard, and Judge Mode for running the scenes. |
 | Potential impact | Agentic commerce stalls on trust: owners won't let agents spend if a web page can hijack them. People over 60 reported about $4.9B in fraud losses to the FBI in 2024. Leash is demonstrated end to end for both. |
 | Innovation | Treats prompt injection and scams as the same attack; task mandates; an allowance that is a PayPal hold, so unspent money is never charged; AI that can only escalate. |

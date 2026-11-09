@@ -6,6 +6,7 @@ import { PayPalApiError } from "@/lib/paypal/client";
 import { LeashError } from "@/lib/payments/service";
 
 const STATUS: Record<LeashError["code"], number> = {
+  invalid_request: 400,
   not_found: 404,
   forbidden: 403,
   cooling_off: 409,

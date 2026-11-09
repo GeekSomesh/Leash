@@ -3,6 +3,7 @@
 // fallback keeps the assistant working without a key (deterministic, no network).
 
 import { z } from "zod";
+import { valueToCents } from "@/lib/money";
 import { askForJson, claudeConfigured, ClaudeUnavailableError } from "./claude";
 
 export type ParsedVoicePayment = {
@@ -66,9 +67,14 @@ const EMAIL = /[a-z0-9._%+-]+@[a-z0-9-]+(?:\.[a-z0-9-]+)+/i;
 const DIGIT_MONEY = /\$\s*([\d,]+(?:\.\d{1,2})?)\b|\b([\d,]+(?:\.\d{1,2})?)\s*(?:dollars?|bucks|usd)\b/i;
 const NAME = /\b(?:to|for)\s+((?:[A-Z][a-z]+)(?:\s+[A-Z][a-z]+)?)/;
 
+/** The first email address in a piece of text, lowercased, or null. */
+export function findEmail(text: string): string | null {
+  return text.match(EMAIL)?.[0]?.toLowerCase() ?? null;
+}
+
 /** Parses an amount, payee name and payee email with fixed patterns (no model, no network). */
 export function parseVoiceFallback(text: string): ParsedVoicePayment {
-  const payeeEmail = text.match(EMAIL)?.[0] ?? null;
+  const payeeEmail = findEmail(text);
   // The name pattern only matches capitalized words, so it never captures an email address.
   const payeeName = text.match(NAME)?.[1] ?? null;
   return { amountCents: parseMoneyWords(text), payeeName, payeeEmail };
@@ -78,9 +84,13 @@ export function parseVoiceFallback(text: string): ParsedVoicePayment {
 function parseMoneyWords(text: string): number | null {
   const digitMatch = text.match(DIGIT_MONEY);
   if (digitMatch) {
-    const digits = (digitMatch[1] ?? digitMatch[2])!.replace(/,/g, "");
-    const value = Number.parseFloat(digits);
-    if (Number.isFinite(value) && value > 0) return Math.round(value * 100);
+    // Integer cents straight from the digits: no floating point for money.
+    try {
+      const cents = valueToCents((digitMatch[1] ?? digitMatch[2])!.replace(/,/g, ""));
+      if (cents > 0) return cents;
+    } catch {
+      // Not a plain amount; fall through to the spoken-number parser.
+    }
   }
 
   const words = text.toLowerCase().split(/[^a-z]+/).filter(Boolean);

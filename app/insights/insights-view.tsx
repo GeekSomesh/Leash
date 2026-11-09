@@ -2,16 +2,19 @@
 
 // The insights dashboard: what the agents spent, what Leash stopped, and how the PayPal
 // allowance is being used. Themed from Design.md's tokens (AG Grid theming API), with a
-// custom "leash meter" gauge widget. The same data feeds an AG Studio report when an
-// AG_STUDIO licence is configured.
+// custom "leash meter" gauge widget.
 
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { AgGridReact } from "ag-grid-react";
-import { themeQuartz, type ColDef } from "ag-grid-community";
+import { AllCommunityModule, ModuleRegistry, themeQuartz, type ColDef } from "ag-grid-community";
 import { LeashMark } from "@/app/_components/bits";
 import type { InsightsCheck, InsightsData, InsightsLedger, InsightsPayment } from "@/lib/insights-data";
 import { formatUsd } from "@/lib/money";
+
+// AG Grid ships its features as modules; without registering them, pagination, column
+// filters, cell classes and tooltips are silently off (AG Grid error #200).
+ModuleRegistry.registerModules([AllCommunityModule]);
 
 const THEME = themeQuartz.withParams({
   accentColor: "#0b5fff",

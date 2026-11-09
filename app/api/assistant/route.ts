@@ -2,8 +2,10 @@ import { z } from "zod";
 import { getPaymentView } from "@/lib/console-state";
 import { getDb } from "@/lib/db/client";
 import { parseVoicePayment } from "@/lib/ai/parse-voice";
-import { DEMO_IDS, arjunEmail } from "@/lib/demo/seed";
+import { resolvePayee } from "@/lib/assistant/resolve-payee";
+import { DEMO_IDS } from "@/lib/demo/seed";
 import { errorResponse, readJson } from "@/lib/http";
+import { knownPayeesFor } from "@/lib/payments/queries";
 import { agentOrThrow, LeashError, submitPayment } from "@/lib/payments/service";
 
 const Body = z.object({
@@ -14,8 +16,9 @@ const Body = z.object({
 
 /**
  * The voice assistant's endpoint: spoken words in, a Leash decision out. Parses the request
- * (Claude when configured, patterns otherwise) and submits it as Ramesh's voice assistant,
- * so it goes through exactly the same pipeline as an MCP agent.
+ * (Claude when configured, patterns otherwise), works out who to pay without ever guessing,
+ * and submits it as Ramesh's voice assistant, so it goes through exactly the same pipeline
+ * as an MCP agent.
  */
 export async function POST(request: Request) {
   try {
@@ -23,19 +26,17 @@ export async function POST(request: Request) {
     const db = await getDb();
     const parsed = await parseVoicePayment(text);
     if (!parsed.amountCents || parsed.amountCents <= 0) {
-      throw new LeashError(
-        'I couldn\'t tell how much to send. Try something like "send two thousand dollars to Arjun".',
-        "invalid_state",
-      );
+      throw new LeashError('I couldn\'t tell how much to send. Try something like "send two thousand dollars to Arjun".', "invalid_request");
     }
 
-    const email = (parsed.payeeEmail ?? arjunEmail()).toLowerCase();
-    const name = parsed.payeeName ?? parsed.payeeEmail?.split("@")[0] ?? "Arjun";
     const agent = await agentOrThrow(db, DEMO_IDS.voiceAssistant);
+    const payee = resolvePayee({ spokenText: text, parsed, callerNote: callerNote ?? null, knownPayees: await knownPayeesFor(db, agent.ownerId) });
+    if (!payee.ok) throw new LeashError(payee.message, "invalid_request");
+
     const payment = await submitPayment(db, agent, {
       kind: "transfer",
       mandateId: null,
-      payee: { id: email, name, type: "person", paypalEmail: email, declaredCategories: [] },
+      payee: { id: payee.email, name: payee.name, type: "person", paypalEmail: payee.email, declaredCategories: [] },
       items: [],
       shippingCents: 0,
       taxCents: 0,

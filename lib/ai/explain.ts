@@ -28,7 +28,7 @@ export async function explainDecision(input: {
 Audience: ${input.audience === "payer" ? `${input.payerName}, who asked for the payment` : input.audience === "guardian" ? `${input.guardianName ?? "the guardian"}, who approves risky payments for ${input.payerName}` : `the owner, ${input.payerName}`}
 Payment: ${formatUsd(input.request.totalCents)} to ${input.request.payee.name}
 Decision: ${input.decision.outcome}
-${input.resolvedStatus ? `Resolved: ${input.resolvedStatus === "declined" ? "a person declined it and the hold was released" : input.resolvedStatus === "paid" ? "a person approved it and the payment went through" : "it failed before any money moved"}` : ""}
+${input.resolvedStatus ? `Resolved: ${input.resolvedStatus === "declined" ? (input.request.kind === "transfer" ? "a person declined it and the hold was released" : "a person declined it and nothing was charged") : input.resolvedStatus === "paid" ? "a person approved it and the payment went through" : "it failed before any money moved"}` : ""}
 Reasons: ${input.decision.reasons.join(" | ") || "all checks passed"}
 ${input.decision.hold?.scamSuspected ? "Scam suspected: yes" : ""}
 ${input.decision.hold?.coolingOffUntil ? `Held until at least: ${input.decision.hold.coolingOffUntil}` : ""}`;
@@ -51,7 +51,10 @@ export function templateExplanation(input: {
   const amount = formatUsd(input.request.totalCents);
   const payee = input.request.payee.name;
   if (input.resolvedStatus === "declined") {
-    return `Declined. The hold was released, so the money never left the account.`;
+    // Transfers have their own PayPal hold, which is voided; a declined purchase was never captured.
+    return input.request.kind === "transfer"
+      ? `Declined. The hold was released, so the money never left the account.`
+      : `Declined, so nothing was charged for ${amount} at ${payee}.`;
   }
   if (input.resolvedStatus === "failed") {
     return `The payment didn't go through, so nothing was sent.`;

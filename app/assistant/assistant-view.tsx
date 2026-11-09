@@ -117,7 +117,6 @@ export function AssistantView({ callerTranscript }: { callerTranscript: string }
   };
 
   const resultStyle = result ? (RESULT_STYLE[result.status] ?? "bg-info-soft") : "";
-  const payerName = result ? `${result.ownerName}'s voice assistant` : "the assistant";
 
   return (
     <main className="mx-auto min-h-screen max-w-xl px-4 py-8">
@@ -250,7 +249,9 @@ export function AssistantView({ callerTranscript }: { callerTranscript: string }
         <details className="rounded-xl border border-line bg-card px-4 py-3">
           <summary className="cursor-pointer text-lg font-medium">What the caller said (optional, for this demo)</summary>
           <p className="mt-2 text-base text-muted">
-            If a caller told the assistant what to ask for, put their words here. Leash checks these words too.
+            If a caller told you what to pay, put their words here. Leash checks these words too. To send to an
+            account the caller gave, say so, for example &ldquo;to the PayPal he gave me&rdquo;; Leash never takes a
+            caller&apos;s account on its own.
           </p>
           <textarea
             value={callerNote}
@@ -262,7 +263,7 @@ export function AssistantView({ callerTranscript }: { callerTranscript: string }
         </details>
 
         <p className="text-base text-muted">
-          Nothing is sent without a check. If something looks wrong, {payerName.replace("'s voice assistant", "")}&apos;s family will look at it first.
+          Nothing is sent without a check. If something looks wrong, your family will look at it first.
         </p>
       </section>
     </main>

@@ -43,7 +43,7 @@ import {
 export class LeashError extends Error {
   constructor(
     message: string,
-    readonly code: "not_found" | "forbidden" | "cooling_off" | "invalid_state" | "paypal",
+    readonly code: "invalid_request" | "not_found" | "forbidden" | "cooling_off" | "invalid_state" | "paypal",
   ) {
     super(message);
     this.name = "LeashError";
@@ -172,11 +172,11 @@ async function executePurchase(db: Db, paymentId: string, options: ServiceOption
         .where(eq(mandates.id, payment.mandateId));
     }
 
-    await payOut(db, payment, allowance.simulated, "merchant");
+    const payoutFailure = await payOut(db, payment, allowance.simulated, "merchant");
     await rememberPayee(db, payment);
     await db
       .update(paymentRequests)
-      .set({ status: "paid", paypalCaptureId: captureId, allowanceId: allowance.id, resolvedAt: now })
+      .set({ status: "paid", paypalCaptureId: captureId, allowanceId: allowance.id, resolvedAt: now, failure: payoutFailure })
       .where(eq(paymentRequests.id, paymentId));
   } catch (error) {
     if (error instanceof PayPalApiError) return fail(db, paymentId, `PayPal: ${error.issue ?? error.status} (debug id ${error.debugId ?? "n/a"})`);
@@ -243,9 +243,12 @@ async function captureTransfer(db: Db, paymentId: string, options: ServiceOption
           })
         ).captureId;
     await recordLedger(db, { requestId: paymentId, type: "capture", amountCents: payment.totalCents, paypalId: captureId, status: "COMPLETED", simulated: payment.simulated });
-    await payOut(db, payment, payment.simulated, "person");
+    const payoutFailure = await payOut(db, payment, payment.simulated, "person");
     await rememberPayee(db, payment);
-    await db.update(paymentRequests).set({ status: "paid", paypalCaptureId: captureId, resolvedAt: now }).where(eq(paymentRequests.id, paymentId));
+    await db
+      .update(paymentRequests)
+      .set({ status: "paid", paypalCaptureId: captureId, resolvedAt: now, failure: payoutFailure })
+      .where(eq(paymentRequests.id, paymentId));
   } catch (error) {
     if (error instanceof PayPalApiError) return fail(db, paymentId, `PayPal: ${error.issue ?? error.status} (debug id ${error.debugId ?? "n/a"})`);
     throw error;
@@ -311,8 +314,9 @@ export async function allowedApprovers(db: Db, payment: PaymentRow): Promise<str
 
 /**
  * Returns a captured payment to the payer. Only the owner acts (from the console). The
- * refund goes back to the payer's PayPal account; the allowance's captured counter is left
- * as the ledger recorded it, since the money's round trip is visible there.
+ * refund goes back to the payer's PayPal account. The allowance's captured counter is left
+ * as it is: PayPal doesn't add a refunded amount back to an authorization. The task's
+ * spending is given back, so the agent can finish the task with a replacement.
  */
 export async function refundPayment(
   db: Db,
@@ -324,8 +328,9 @@ export async function refundPayment(
   if (payment.status !== "paid") throw new LeashError(`This payment is ${payment.status}, so there is nothing to refund.`, "invalid_state");
   if (input.requesterId !== payment.ownerId) throw new LeashError("Only the owner can refund this payment.", "forbidden");
 
+  let refundId: string;
   try {
-    const refundId = payment.simulated
+    refundId = payment.simulated
       ? simulatedPayPalId("REFUND")
       : (
           await refundCapture(payment.paypalCaptureId!, {
@@ -334,15 +339,22 @@ export async function refundPayment(
             requestId: `${payment.id}-refund`,
           })
         ).refundId;
-    await recordLedger(db, { requestId: payment.id, type: "refund", amountCents: payment.totalCents, paypalId: refundId, status: "COMPLETED", simulated: payment.simulated, detail: "Refunded to the payer" });
-    await db.update(paymentRequests).set({ status: "refunded", resolvedAt: options.now ?? new Date() }).where(eq(paymentRequests.id, payment.id));
   } catch (error) {
+    // The payment itself still went through, so it stays "paid"; only the refund failed.
     if (error instanceof PayPalApiError) {
-      await fail(db, payment.id, `PayPal: ${error.issue ?? error.status} (debug id ${error.debugId ?? "n/a"})`);
-      return (await getPayment(db, payment.id))!;
+      throw new LeashError(`PayPal couldn't refund this payment (${error.issue ?? error.status}, debug id ${error.debugId ?? "n/a"}). It is still paid.`, "paypal");
     }
     throw error;
   }
+
+  await recordLedger(db, { requestId: payment.id, type: "refund", amountCents: payment.totalCents, paypalId: refundId, status: "COMPLETED", simulated: payment.simulated, detail: "Refunded to the payer" });
+  if (payment.mandateId) {
+    await db
+      .update(mandates)
+      .set({ spentCents: sql`greatest(${mandates.spentCents} - ${payment.totalCents}, 0)` })
+      .where(eq(mandates.id, payment.mandateId));
+  }
+  await db.update(paymentRequests).set({ status: "refunded", resolvedAt: options.now ?? new Date() }).where(eq(paymentRequests.id, payment.id));
   return (await getPayment(db, payment.id))!;
 }
 
@@ -430,22 +442,35 @@ function payoutEmail(payment: PaymentRow): string | null {
   return (envName && process.env[envName]) || null;
 }
 
-async function payOut(db: Db, payment: PaymentRow, simulated: boolean, to: "merchant" | "person") {
+/**
+ * Pays the merchant or person after the capture. A payout failure doesn't undo the capture
+ * (the payer's money has moved), so it is recorded and returned instead of thrown: the
+ * payment stays "paid" with a note saying the payout needs another try.
+ */
+async function payOut(db: Db, payment: PaymentRow, simulated: boolean, to: "merchant" | "person"): Promise<string | null> {
   const receiver = payoutEmail(payment);
   if (!receiver && !simulated) {
     await recordLedger(db, { requestId: payment.id, type: "payout", amountCents: payment.totalCents, paypalId: null, status: "SKIPPED", simulated, detail: `No sandbox email configured for ${payment.payeeName}` });
-    return;
+    return null;
   }
-  const batchId = simulated
-    ? simulatedPayPalId("PAYOUT")
-    : (
-        await createPayout({
-          senderBatchId: `${payment.id}-payout`,
-          emailSubject: to === "merchant" ? `Payment for your order (${payment.payeeName})` : "You've received money",
-          items: [{ receiverEmail: receiver!, amountCents: payment.totalCents, note: `Paid through Leash for request ${payment.id}`, senderItemId: payment.id }],
-        })
-      ).batchId;
-  await recordLedger(db, { requestId: payment.id, type: "payout", amountCents: payment.totalCents, paypalId: batchId, status: simulated ? "SUCCESS" : "PENDING", simulated, detail: `Paid to ${receiver ?? payment.payeeName}` });
+  try {
+    const batchId = simulated
+      ? simulatedPayPalId("PAYOUT")
+      : (
+          await createPayout({
+            senderBatchId: `${payment.id}-payout`,
+            emailSubject: to === "merchant" ? `Payment for your order (${payment.payeeName})` : "You've received money",
+            items: [{ receiverEmail: receiver!, amountCents: payment.totalCents, note: `Paid through Leash for request ${payment.id}`, senderItemId: payment.id }],
+          })
+        ).batchId;
+    await recordLedger(db, { requestId: payment.id, type: "payout", amountCents: payment.totalCents, paypalId: batchId, status: simulated ? "SUCCESS" : "PENDING", simulated, detail: `Paid to ${receiver ?? payment.payeeName}` });
+    return null;
+  } catch (error) {
+    if (!(error instanceof PayPalApiError)) throw error;
+    const failure = `The money was captured, but the payout to ${payment.payeeName} failed (PayPal: ${error.issue ?? error.status}, debug id ${error.debugId ?? "n/a"}).`;
+    await recordLedger(db, { requestId: payment.id, type: "payout", amountCents: payment.totalCents, paypalId: null, status: "FAILED", simulated, detail: failure });
+    return failure;
+  }
 }
 
 async function rememberPayee(db: Db, payment: PaymentRow) {

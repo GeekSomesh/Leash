@@ -8,5 +8,8 @@ export default defineConfig({
   test: {
     environment: "node",
     include: ["lib/**/*.test.ts"],
+    // Booting the embedded Postgres (WASM) can take several seconds on a busy machine.
+    hookTimeout: 30_000,
+    testTimeout: 30_000,
   },
 });

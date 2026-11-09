@@ -139,6 +139,11 @@ export async function loadPolicyFacts(
   };
 }
 
+/** People and merchants the owner has paid before. */
+export async function knownPayeesFor(db: Db, ownerId: string): Promise<{ payeeId: string; name: string }[]> {
+  return db.select({ payeeId: knownPayees.payeeId, name: knownPayees.name }).from(knownPayees).where(eq(knownPayees.ownerId, ownerId));
+}
+
 // --- What the UI shows ----------------------------------------------------------------------
 
 export type ActivityItem = PaymentRow & { agentName: string; agentKind: AgentRow["kind"]; ownerName: string };

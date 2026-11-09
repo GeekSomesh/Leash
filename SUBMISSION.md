@@ -31,10 +31,14 @@ submission as a judge would (fresh browser, hosted URL, all four scenes).
    - **Scene 2, Maya's birthday gift:** paid — it fits the $40 task.
    - **Scene 3, Poisoned product page:** blocked — the hidden instruction is quoted, nothing captured.
    - **Scene 4, The bail-money call:** held — authorized, not captured, cooling-off countdown. From the
-     payment card, open the phone view (`/approve/<id>`), wait out or let the countdown finish, press
-     **Decline**: the hold is voided and the trace says the money never moved.
-4. Voice scene (recommended): open `/assistant`, type (or speak) "send two thousand dollars to Arjun", keep
-   the collapsed "What the caller said" box filled. Same held outcome.
+     payment card, open the phone view (`/approve/<id>`) and press **Decline** (declining works any time;
+     only approving waits for the countdown): the hold is voided and the trace says the money never moved.
+4. Voice scene (recommended): open `/assistant`, type (or speak) "Send two thousand dollars to Arjun, to the
+   PayPal he gave me", and keep the "What the caller said" box filled (it is prefilled with the scam call).
+   Leash pays the account the caller gave only because the request points at it, then holds it: the trace
+   shows "Arjun has been paid before, but at a different account" plus the scam signals. Saying just
+   "send two thousand dollars to Arjun" pays the real Arjun's known account instead (still held for
+   approval: it's over $200 and the call has scam signs). An unknown payee is never guessed: the assistant asks.
 5. Over MCP: the console's **Connect over MCP** dialog has per-agent configs, or run
    `APP_BASE_URL=https://<host> npm run mcp:smoke` from a clone.
 6. Insights: `/insights` — spend by agent, what Leash stopped, decisions, PayPal activity, leash meter.
