@@ -37,3 +37,6 @@ next-env.d.ts
 # ProjectDocs
 docs/
 
+# local security scanner state (Mimosa finding ledger, scan events)
+/.mimosa/
+
