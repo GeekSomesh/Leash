@@ -10,7 +10,7 @@
 // or a person, can approve money.
 
 import type { Review } from "@/lib/ai/review";
-import { ClaudeUnavailableError } from "@/lib/ai/claude";
+import { AiUnavailableError } from "@/lib/ai/openrouter";
 import {
   type Approver,
   type Category,
@@ -51,7 +51,7 @@ export async function decide({ request, context, reviewer, hasGuardian }: Decide
     try {
       review = await reviewer(request, context.mandate);
     } catch (error) {
-      if (!(error instanceof ClaudeUnavailableError)) throw error;
+      if (!(error instanceof AiUnavailableError)) throw error;
       reviewError = error.message;
     }
   }
@@ -102,8 +102,8 @@ export async function decide({ request, context, reviewer, hasGuardian }: Decide
   } else {
     checks.push(
       reviewError
-        ? ai("ai_review", "Claude's review", "hold", `Claude couldn't review this payment (${reviewError}), so a person will check it.`)
-        : ai("ai_review", "Claude's review", "skipped", "Claude isn't configured; the rules and built-in detectors decided."),
+        ? ai("ai_review", "AI review", "hold", `The AI couldn't review this payment (${reviewError}), so a person will check it.`)
+        : ai("ai_review", "AI review", "skipped", "The AI isn't configured; the rules and built-in detectors decided."),
     );
   }
 
@@ -141,7 +141,10 @@ export async function decide({ request, context, reviewer, hasGuardian }: Decide
 function reviewChecks(review: Review, context: DecideInput["context"], request: PaymentRequest): Check[] {
   const checks: Check[] = [];
 
-  const labelled = review.items.filter((i) => i.categories.length > 0);
+  // The reviewer may hallucinate items that don't exist (models sometimes label a transfer as
+  // "item 1"); an item that isn't in the request can't label anything. Transfers have none.
+  const realItems = review.items.filter((i) => Number.isInteger(i.index) && i.index >= 0 && i.index < request.items.length);
+  const labelled = realItems.filter((i) => i.categories.length > 0);
   checks.push(
     ai(
       "ai_items",
@@ -154,7 +157,7 @@ function reviewChecks(review: Review, context: DecideInput["context"], request: 
     ),
   );
 
-  const cashLike = review.items.filter((i) => i.cashEquivalent);
+  const cashLike = realItems.filter((i) => i.cashEquivalent);
   if (cashLike.length > 0) {
     const names = cashLike.map((i) => request.items[i.index]?.name ?? `item ${i.index + 1}`).join(", ");
     checks.push(

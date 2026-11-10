@@ -29,7 +29,7 @@ services:
         sync: false
       - key: DEMO_PERSON_ARJUN_EMAIL
         sync: false
-      - key: ANTHROPIC_API_KEY
+      - key: OPENROUTER_API_KEY
         sync: false
       - key: AG_STUDIO
         sync: false

@@ -1,7 +1,6 @@
-import type Anthropic from "@anthropic-ai/sdk";
 import type { AgLlmRequest } from "ag-studio";
 import { describe, expect, it } from "vitest";
-import { fromClaudeMessage, toClaudeToolName, toClaudeTurn } from "./studio-turn";
+import { fromOpenAiResponse, toOpenAiTurn, toSafeToolName } from "./studio-turn";
 
 const tool = (name: string) => ({ name, description: `Runs ${name}`, parameters: { type: "object", properties: { q: { type: "string" } } } });
 
@@ -17,37 +16,40 @@ const baseRequest: AgLlmRequest = {
   ],
 };
 
-function claudeMessage(content: unknown[], stop: string = "end_turn"): Anthropic.Beta.BetaMessage {
-  return { id: "msg_1", model: "claude-opus-5-5", content, stop_reason: stop } as unknown as Anthropic.Beta.BetaMessage;
+function rawTurn(content: string | null, toolCalls: unknown[] = [], finishReason = "stop") {
+  return {
+    id: "chatcmpl_1",
+    model: "test-model",
+    message: { content, tool_calls: toolCalls as never },
+    finishReason,
+  };
 }
 
-describe("toClaudeTurn", () => {
-  it("renames tools to Claude-safe names and remembers the originals", () => {
-    const turn = toClaudeTurn(baseRequest);
-    expect(turn.tools.map((t) => t.name)).toEqual(["studio_executeQuery", "delegate_widget"]);
+describe("toOpenAiTurn", () => {
+  it("renames tools to safe names and remembers the originals", () => {
+    const turn = toOpenAiTurn(baseRequest);
+    expect(turn.tools.map((t) => t.function.name)).toEqual(["studio_executeQuery", "delegate_widget"]);
     expect(turn.toolNames.get("studio_executeQuery")).toBe("studio.executeQuery");
-    expect(turn.tools[0]?.input_schema.type).toBe("object");
-    expect(toClaudeToolName("a.b c")).toBe("a_b_c");
+    expect(turn.tools[0]?.function.parameters.type).toBe("object");
+    expect(toSafeToolName("a.b c")).toBe("a_b_c");
   });
 
   it("maps the conversation: user text, assistant text + tool call, then the tool result", () => {
-    const { messages, system } = toClaudeTurn(baseRequest);
+    const { messages, system } = toOpenAiTurn(baseRequest);
     expect(system).toBe("You build dashboards.");
     expect(messages).toEqual([
-      { role: "user", content: [{ type: "text", text: "What did the agents spend?" }] },
+      { role: "user", content: "What did the agents spend?" },
       {
         role: "assistant",
-        content: [
-          { type: "text", text: "Let me check." },
-          { type: "tool_use", id: "call_1", name: "studio_executeQuery", input: { q: "spend" } },
-        ],
+        content: "Let me check.",
+        tool_calls: [{ id: "call_1", type: "function", function: { name: "studio_executeQuery", arguments: '{"q":"spend"}' } }],
       },
-      { role: "user", content: [{ type: "tool_result", tool_use_id: "call_1", content: '{"rows":[]}' }] },
+      { role: "tool", tool_call_id: "call_1", content: '{"rows":[]}' },
     ]);
   });
 
   it("moves system messages into the system prompt and never ends on an assistant turn", () => {
-    const turn = toClaudeTurn({
+    const turn = toOpenAiTurn({
       ...baseRequest,
       input: [
         { id: "s1", kind: "input", type: "message", role: "system", status: "completed", content: [{ type: "text", text: "Today is Monday." }] },
@@ -59,38 +61,35 @@ describe("toClaudeTurn", () => {
     expect(turn.messages.at(-1)?.role).toBe("user");
   });
 
-  it("turns a forced tool choice into an instruction (Opus 5.5 can't force tools)", () => {
-    const turn = toClaudeTurn({ ...baseRequest, toolChoice: { name: "studio.executeQuery" } });
+  it("turns a forced tool choice into an instruction", () => {
+    const turn = toOpenAiTurn({ ...baseRequest, toolChoice: { name: "studio.executeQuery" } });
     expect(turn.toolChoice).toBe("auto");
     expect(turn.system).toContain("calling the tool studio_executeQuery");
-    expect(toClaudeTurn({ ...baseRequest, toolChoice: "none" }).toolChoice).toBe("none");
+    expect(toOpenAiTurn({ ...baseRequest, toolChoice: "none" }).toolChoice).toBe("none");
   });
 
   it("uses the requested effort when valid, medium otherwise", () => {
-    expect(toClaudeTurn({ ...baseRequest, model: { id: "claude-opus-5-5", effort: "high" } }).effort).toBe("high");
-    expect(toClaudeTurn({ ...baseRequest, model: { id: "claude-opus-5-5", effort: "turbo" } }).effort).toBe("medium");
+    expect(toOpenAiTurn({ ...baseRequest, model: { id: "x", effort: "high" } }).effort).toBe("high");
+    expect(toOpenAiTurn({ ...baseRequest, model: { id: "x", effort: "turbo" } }).effort).toBe("medium");
   });
 });
 
-describe("fromClaudeMessage", () => {
+describe("fromOpenAiResponse", () => {
   const names = new Map([["studio_executeQuery", "studio.executeQuery"]]);
 
   it("returns the text as one message and each tool call with Studio's tool name", () => {
-    const response = fromClaudeMessage(
-      claudeMessage([
-        { type: "text", text: "Here is the query." },
-        { type: "tool_use", id: "toolu_1", name: "studio_executeQuery", input: { q: "blocked" } },
-      ]),
+    const response = fromOpenAiResponse(
+      rawTurn("Here is the query.", [{ id: "call_9", type: "function", function: { name: "studio_executeQuery", arguments: '{"q":"blocked"}' } }]),
       names,
     );
     expect(response.status).toBe("completed");
     expect(response.output[0]).toMatchObject({ type: "message", role: "assistant", content: [{ type: "text", text: "Here is the query." }] });
-    expect(response.output[1]).toMatchObject({ type: "function_call", callId: "toolu_1", name: "studio.executeQuery", arguments: '{"q":"blocked"}' });
+    expect(response.output[1]).toMatchObject({ type: "function_call", callId: "call_9", name: "studio.executeQuery", arguments: '{"q":"blocked"}' });
   });
 
   it("reports refusals and truncation instead of pretending they completed", () => {
-    expect(fromClaudeMessage(claudeMessage([], "refusal"), names)).toMatchObject({ status: "failed", error: { code: "refusal" } });
-    expect(fromClaudeMessage(claudeMessage([{ type: "text", text: "Partial" }], "max_tokens"), names)).toMatchObject({
+    expect(fromOpenAiResponse(rawTurn(null, [], "content_filter"), names)).toMatchObject({ status: "failed", error: { code: "refusal" } });
+    expect(fromOpenAiResponse(rawTurn("Partial", [], "length"), names)).toMatchObject({
       status: "incomplete",
       incompleteDetails: { reason: "max_output_tokens" },
     });

@@ -1,0 +1,64 @@
+{
+  "schemaVersion": "mimosa-finding-ledger-batch/v1",
+  "batchId": "stop-20261108T131257077Z-18668-2686edf8d044",
+  "runId": "20261108T131257077Z-18668-2686edf8d044",
+  "runStatus": "completed",
+  "coverage": {
+    "status": "complete",
+    "reasons": []
+  },
+  "source": {
+    "component": "zcode-hook",
+    "operationId": "Stop"
+  },
+  "revision": "c0c47d96b05f18ca18bc0c156c29790395973ea4",
+  "diffHash": "e19b7d647884310ab14084c639866cb1b18d9fce468880500c007a4e2eade914",
+  "rulesVersion": "unavailable",
+  "sessionHash": "20378a0c0633ff6ee38a117b600e694dd928c8daaf04e1ffb9d4860f76a4980e",
+  "reportRef": ".mimosa/reports/task-review-sess_dad7ef06-5999-41d0-89f0-89c9ef42b12d-20261108T131257077Z-18668-2686edf8d044.json",
+  "events": [],
+  "observedFindingIds": [],
+  "verifiedFiles": [
+    {
+      "file": "lib/ai/explain.ts",
+      "direct": "complete",
+      "projectContext": "partial"
+    },
+    {
+      "file": "lib/payments/service.ts",
+      "direct": "complete",
+      "projectContext": "partial"
+    },
+    {
+      "file": "lib/payments/service.test.ts",
+      "direct": "complete",
+      "projectContext": "partial"
+    },
+    {
+      "file": "app/api/payments/[id]/refund/route.ts",
+      "direct": "complete",
+      "projectContext": "partial"
+    },
+    {
+      "file": "app/_components/payment-card.tsx",
+      "direct": "complete",
+      "projectContext": "partial"
+    },
+    {
+      "file": "app/_components/console.tsx",
+      "direct": "complete",
+      "projectContext": "partial"
+    },
+    {
+      "file": "app/api/demo/reset/route.ts",
+      "direct": "complete",
+      "projectContext": "partial"
+    },
+    {
+      "file": "scripts/mcp-smoke-test.ts",
+      "direct": "complete",
+      "projectContext": "partial"
+    }
+  ],
+  "recordedAt": "2026-11-08T13:12:57.505Z"
+}

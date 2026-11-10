@@ -54,7 +54,7 @@ export function CheckIcon({ status }: { status: Check["status"] }) {
 const SOURCE: Record<Check["source"], { label: string; className: string }> = {
   rule: { label: "Rule", className: "border-ink/20 text-ink-soft" },
   heuristic: { label: "Detector", className: "border-info/30 text-info" },
-  ai: { label: "Claude", className: "border-brand/30 text-brand" },
+  ai: { label: "AI", className: "border-brand/30 text-brand" },
 };
 
 export function SourceTag({ source }: { source: Check["source"] }) {

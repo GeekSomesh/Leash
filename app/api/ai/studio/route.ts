@@ -1,6 +1,6 @@
 import type { AgLlmRequest } from "ag-studio";
 import { z } from "zod";
-import { claudeConfigured, ClaudeUnavailableError } from "@/lib/ai/claude";
+import { aiConfigured, AiUnavailableError } from "@/lib/ai/openrouter";
 import { runStudioTurn } from "@/lib/ai/studio-turn";
 import { readJson } from "@/lib/http";
 
@@ -54,8 +54,8 @@ function allowTurn(client: string): boolean {
 }
 
 export async function POST(request: Request) {
-  if (!claudeConfigured()) {
-    return Response.json({ error: "The insights analyst needs Claude: set ANTHROPIC_API_KEY on the server." }, { status: 503 });
+  if (!aiConfigured()) {
+    return Response.json({ error: "The insights analyst needs the AI model: set OPENROUTER_API_KEY on the server." }, { status: 503 });
   }
   const client = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "local";
   if (!allowTurn(client)) {
@@ -68,10 +68,10 @@ export async function POST(request: Request) {
   try {
     return Response.json(await runStudioTurn(parsed.data as unknown as AgLlmRequest, request.signal));
   } catch (error) {
-    if (error instanceof ClaudeUnavailableError) {
-      // Keep Claude's error details in the server log; the browser gets a plain message.
+    if (error instanceof AiUnavailableError) {
+      // Keep the model's error details in the server log; the browser gets a plain message.
       console.error("Leash analyst:", error.message);
-      return Response.json({ error: "The Leash analyst couldn't reach Claude. Try again in a minute." }, { status: 502 });
+      return Response.json({ error: "The Leash analyst couldn't reach the AI model. Try again in a minute." }, { status: 502 });
     }
     console.error(error);
     return Response.json({ error: "The analyst couldn't answer." }, { status: 500 });

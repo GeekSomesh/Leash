@@ -1,7 +1,7 @@
 // Shared error handling for route handlers.
 
 import { ZodError } from "zod";
-import { ClaudeUnavailableError } from "@/lib/ai/claude";
+import { AiUnavailableError } from "@/lib/ai/openrouter";
 import { PayPalApiError } from "@/lib/paypal/client";
 import { LeashError } from "@/lib/payments/service";
 
@@ -20,7 +20,7 @@ export function errorResponse(error: unknown): Response {
   if (error instanceof PayPalApiError) {
     return Response.json({ error: `PayPal: ${error.issue ?? error.status}`, debugId: error.debugId }, { status: 502 });
   }
-  if (error instanceof ClaudeUnavailableError) return Response.json({ error: error.message }, { status: 503 });
+  if (error instanceof AiUnavailableError) return Response.json({ error: error.message }, { status: 503 });
   console.error(error);
   return Response.json({ error: "Something went wrong." }, { status: 500 });
 }

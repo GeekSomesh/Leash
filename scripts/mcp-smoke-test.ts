@@ -42,20 +42,25 @@ async function main() {
   const token = tokens["agent-gift"];
   if (!token) throw new Error("No token for the gift agent.");
 
+  // AI-backed reviews can take over a minute on a free model, so each callTool below carries
+  // its own timeout (the SDK's default is 60 s; the constructor timeout only covers negotiation).
   const client = new Client({ name: "leash-smoke-test", version: "0.1.0" });
   await client.connect(new StreamableHTTPClientTransport(new URL(`${base}/api/mcp`), { requestInit: { headers: { Authorization: `Bearer ${token}` } } }));
 
   const { tools } = await client.listTools();
   console.log(`Tools: ${tools.map((t) => t.name).join(", ")}`);
 
+  // AI-backed reviews can take over a minute on a free model; the SDK's default is 60 s.
+  const CALL_TIMEOUT = { timeout: 180_000 };
+
   console.log("\nget_spending_status:");
-  console.log(textOf(await client.callTool({ name: "get_spending_status", arguments: {} })));
+  console.log(textOf(await client.callTool({ name: "get_spending_status", arguments: {} }, CALL_TIMEOUT)));
 
   console.log("\nrequest_payment (telescope kit):");
-  console.log(textOf(await client.callTool({ name: "request_payment", arguments: telescopePurchase() })));
+  console.log(textOf(await client.callTool({ name: "request_payment", arguments: telescopePurchase() }, CALL_TIMEOUT)));
 
   console.log("\nrequest_payment (poisoned listing):");
-  console.log(textOf(await client.callTool({ name: "request_payment", arguments: injectedGiftCardPurchase() })));
+  console.log(textOf(await client.callTool({ name: "request_payment", arguments: injectedGiftCardPurchase() }, CALL_TIMEOUT)));
 
   await client.close();
 }

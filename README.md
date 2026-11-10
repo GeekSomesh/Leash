@@ -5,7 +5,7 @@
 Leash is a safety layer for money moved by AI agents, and for the people scams target. Agents (and voice
 assistants) ask Leash to pay instead of holding PayPal access themselves. Leash checks every payment against
 what the owner actually intended, holds it in PayPal when something looks wrong, and lets a trusted person
-decide. Built on the **PayPal sandbox** and **Claude** for the [PayPal AI Hackathon](https://paypalaihackathon.devpost.com).
+decide. Built on the **PayPal sandbox** with AI review over **OpenRouter** for the [PayPal AI Hackathon](https://paypalaihackathon.devpost.com).
 
 > A hidden sentence on a web page can trick an AI shopping agent into buying gift cards. A phone call can
 > trick a grandparent into sending bail money. These are the same attack, social engineering, and Leash
@@ -28,11 +28,11 @@ recognition in, a calm spoken answer out (`speechSynthesis`), and a typed fallba
 adult (large text, high contrast, no jargon). It never guesses who to pay: it uses a PayPal email the person
 says, an account a caller gave only when the person explicitly points at it ("to the PayPal he gave me"), or
 someone they've paid before; otherwise it asks. The console also has an **Edit rules** dialog (owners write
-rules in plain English, Claude compiles them, and a code-generated read-back shows exactly what will be
+rules in plain English, the AI compiles them, and a code-generated read-back shows exactly what will be
 enforced before saving) and an **Insights** report (`/insights`) built with **AG Studio**: spend by agent,
 decisions, why Leash stopped payments, every decision and the PayPal ledger, where a click on any bar or
 slice filters the rest of the page. It has a custom **Leash meter** widget for how much of the allowance
-is used, and the **Leash analyst**, a Claude agent in AG Studio's AI panel that answers questions about
+is used, and the **Leash analyst**, an AI agent in AG Studio's panel that answers questions about
 the numbers and can add charts. The same data is also available as plain AG Grid tables.
 
 ## How it decides
@@ -42,9 +42,12 @@ agent / voice assistant ──MCP──▶ request_payment
                                      │
               ┌──────────────────────┼────────────────────────┐
               ▼                      ▼                        ▼
-   Built-in detectors         Claude's review          (facts from the database:
-   (no model): hidden         (Opus 5.5, structured     budget used, known payees,
-   instructions, scam          output): item            task, allowance left)
+   Built-in detectors         AI review                (facts from the database:
+   (no model): hidden         (via OpenRouter,          budget used, known payees,
+   instructions, scam         zod-validated JSON):      task, allowance left)
+   language, cash-like        item categories,                 │
+   items                      task fit, injection,             │
+                              scam                             │
    language, cash-like         categories, task fit,           │
    items                       injection, scam                 │
               │                      │ labels only add          ▼
@@ -61,10 +64,10 @@ agent / voice assistant ──MCP──▶ request_payment
 ```
 
 **The golden rule: AI can only make a decision stricter.** Only the deterministic rules or a person can
-approve money. Claude can add risk labels (say, "this bundle is gift cards"), flag an injection or a scam,
-or ask for a human, but it can never make a blocked payment look safe. If Claude is configured but can't
-answer, the payment is held for a person (fail closed). Every decision comes with a full trace: each check,
-whether it came from a rule, a detector or Claude, and the exact text it is about.
+approve money. The AI review can add risk labels (say, "this bundle is gift cards"), flag an injection or a
+scam, or ask for a human, but it can never make a blocked payment look safe. If the model is configured but
+can't answer, the payment is held for a person (fail closed). Every decision comes with a full trace: each
+check, whether it came from a rule, a detector or the AI, and the exact text it is about.
 
 ### What Leash checks
 
@@ -76,7 +79,7 @@ whether it came from a rule, a detector or Claude, and the exact text it is abou
 - **Detectors** (`lib/risk/heuristics.ts`): instructions aimed at AI agents in web pages, emails and messages
   (including hidden styling and invisible characters), and the language of scams (urgency, secrecy, arrest
   and bail stories, gift cards or crypto, someone posing as family or an official, new payment details).
-- **Claude** (`lib/ai/review.ts`): one structured review per payment that labels items, judges whether
+- **AI review** (`lib/ai/review.ts`): one structured review per payment that labels items, judges whether
   the payment serves the owner's task, and quotes any injection or scam signals.
 
 ## PayPal integration (sandbox)
@@ -94,11 +97,14 @@ whether it came from a rule, a detector or Claude, and the exact text it is abou
 Every money-moving call carries a `PayPal-Request-Id`, so a retry can never move money twice. Leash never
 stores a payment method (no vaulting).
 
-## AI (Claude)
+## AI (via OpenRouter)
 
-All calls go through `lib/ai/claude.ts`: **Claude Opus 5.5** (`claude-opus-5-5`) with an explicit effort
-level, server-side refusal fallbacks (`fallbacks: "default"`), and **structured outputs** validated
-against zod schemas.
+All calls go through `lib/ai/openrouter.ts`: OpenRouter's OpenAI-compatible chat completions API with
+plain `fetch` (no SDK). The model is `OPENROUTER_MODEL` (default **Nemotron Ultra 550B**,
+`nvidia/nemotron-3-ultra-550b-a55b:free`, so the demo costs nothing). JSON answers are requested in the
+prompt and validated against zod schemas here — free models don't reliably support structured outputs —
+and any refusal, truncation or bad JSON throws `AiUnavailableError`, which fails closed (the payment is
+held for a person).
 
 - **Policy compiler** (`lib/ai/compile-policy.ts`): turns the owner's plain-English rules into the JSON
   policy. The owner then confirms the policy by reading text that **code** generates from that exact JSON
@@ -109,12 +115,12 @@ against zod schemas.
   whose payment was paused, in their language. Never shaming.
 - **Leash analyst** (`app/insights/studio/analyst.ts`): an agent in the insights report, built on AG
   Studio's Agent Framework. AG Studio runs the agent loop in the browser. Each model turn goes to
-  `/api/ai/studio`, which `lib/ai/studio-turn.ts` maps to a Claude tool-use call, so the API key stays on
-  the server. The analyst reads the report's data through AG Studio's query tools and passes report edits
-  to AG Studio's built-in widget, page and data agents, which also run on Claude. It only reads and
-  explains: it can't approve or move money. Turns are rate-limited per client and overall.
+  `/api/ai/studio`, which `lib/ai/studio-turn.ts` maps to an OpenAI-style tool-calling turn, so the API
+  key stays on the server. The analyst reads the report's data through AG Studio's query tools and passes
+  report edits to AG Studio's built-in widget, page and data agents, which run on the same model. It only
+  reads and explains: it can't approve or move money. Turns are rate-limited per client and overall.
 
-Without an `ANTHROPIC_API_KEY` Leash still works: the rules and detectors decide, and the console says so.
+Without an `OPENROUTER_API_KEY` Leash still works: the rules and detectors decide, and the console says so.
 Only the insights analyst is unavailable.
 
 ## Connect any agent over MCP
@@ -161,9 +167,9 @@ Open http://localhost:3000. The demo data loads on first visit.
 4. For webhooks, add `https://<your-host>/api/paypal/webhooks` to the sandbox app (capture, authorization
    and payout events) and set `PAYPAL_WEBHOOK_ID`.
 
-### Add Claude
+### Add the AI (OpenRouter)
 
-Set `ANTHROPIC_API_KEY` in `.env.local`.
+Set `OPENROUTER_API_KEY` in `.env.local` (optionally `OPENROUTER_MODEL` to change the model).
 
 ### AG Studio licence (optional)
 
@@ -174,7 +180,7 @@ meant to be sent to the browser.
 ## Tests
 
 ```bash
-npm test             # 85 tests: rules engine, detectors, decision pipeline, voice parsing and payee resolution, AG Studio-to-Claude turn mapping, end-to-end on a real Postgres
+npm test             # 93 tests: rules engine, detectors, decision pipeline, voice parsing and payee resolution, AG Studio turn mapping, JSON extraction, end-to-end on a real Postgres
 npm run typecheck
 npm run lint
 npm run mcp:smoke    # with the dev server running: connects over MCP like an agent (resets demo data)
@@ -190,7 +196,7 @@ webhook registration, hosted checks). Keep paid plans through the judging period
 
 | Criterion | What to look at |
 |---|---|
-| Technological implementation | PayPal authorizations, partial captures, voids, Payouts and verified webhooks, each needed by a flow; an MCP server; Claude structured outputs; a Claude agent inside AG Studio; a tested rules engine (85 tests). |
+| Technological implementation | PayPal authorizations, partial captures, voids, Payouts and verified webhooks, each needed by a flow; an MCP server; schema-validated AI reviews over OpenRouter; an AI agent inside AG Studio; a tested rules engine (93 tests). |
 | Design | The owner's console with a decision trace for every payment, the guardian's phone approval view, the voice assistant page for an older adult, the AG Studio insights report with its Leash meter and analyst, and Judge Mode for running the scenes. |
 | Potential impact | Agentic commerce stalls on trust: owners won't let agents spend if a web page can hijack them. People over 60 reported about $4.9B in fraud losses to the FBI in 2024. Leash is demonstrated end to end for both. |
 | Innovation | Treats prompt injection and scams as the same attack; task mandates; an allowance that is a PayPal hold, so unspent money is never charged; AI that can only escalate. |
@@ -200,10 +206,10 @@ webhook registration, hosted checks). Keep paid plans through the judging period
 
 - **PayPal sandbox only.** The PayPal client is fixed to `api-m.sandbox.paypal.com`; there is no live mode.
 - **Built during the submission period** (started November 1, 2026). The commit history shows the work.
-- **Tools used:** Claude Opus 5.5 via the Anthropic API (policy compiler, payment review, explanations,
-  voice-request parsing, the insights analyst). Claude Code helped write the code. AG Studio 3.0
-  (`ag-studio`, `ag-studio-react`; commercial, used as a trial or with the `AG_STUDIO` key) for the
-  insights report. Open-source tools: Next.js, Drizzle ORM, PGlite, the MCP TypeScript SDK and
+- **Tools used:** AI via OpenRouter — `nvidia/nemotron-3-ultra-550b-a55b:free` (policy compiler, payment
+  review, explanations, voice-request parsing, the insights analyst). Claude Code helped write the code.
+  AG Studio 3.0 (`ag-studio`, `ag-studio-react`; commercial, used as a trial or with the `AG_STUDIO` key)
+  for the insights report. Open-source tools: Next.js, Drizzle ORM, PGlite, the MCP TypeScript SDK and
   `mcp-handler` (Apache-2.0), zod, Tailwind CSS, AG Grid Community (MIT) for the insights tables, Vitest.
 - PayPal's [hackathon boilerplate](https://github.com/paypaldev/hackathon-paypal-ag-grid-boilerplate) was
   used as a reference for API patterns; no code was copied from it.

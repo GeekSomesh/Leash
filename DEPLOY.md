@@ -20,7 +20,8 @@ In the Render dashboard → the `leash` service → **Environment** (all `sync: 
 | `PAYPAL_CLIENT_ID`, `PAYPAL_CLIENT_SECRET` | The sandbox REST app's credentials (developer.paypal.com) |
 | `PAYPAL_WEBHOOK_ID` | From the sandbox app's webhook settings, after step 3 |
 | `DEMO_MERCHANT_FRESHCART_EMAIL`, `DEMO_MERCHANT_ORBITTOYS_EMAIL`, `DEMO_PERSON_ARJUN_EMAIL` | Sandbox account emails that receive Payouts |
-| `ANTHROPIC_API_KEY` | Claude (review, explanations, policy compiler, voice parsing, the insights analyst) |
+| `OPENROUTER_API_KEY` | OpenRouter AI (review, explanations, policy compiler, voice parsing, the insights analyst) |
+| `OPENROUTER_MODEL` | Optional model override (default `nvidia/nemotron-3-ultra-550b-a55b:free`) |
 | `AG_STUDIO` | AG Studio licence key (optional: without it the `/insights` report runs as a trial with a watermark) |
 
 `APP_BASE_URL` does not need to be set: `lib/config.ts` falls back to `RENDER_EXTERNAL_URL`,
@@ -42,7 +43,7 @@ which Render provides. `DATABASE_URL` comes from the blueprint.
 - MCP from a terminal: `APP_BASE_URL=https://<host> npm run mcp:smoke`
 - Voice assistant page: `/assistant`; phone view: `/approve/<payment id>`; insights: `/insights`
 - Insights analyst: on `/insights`, press **Edit**, open the AI panel and send "What did Leash stop?".
-  A `502` from `/api/ai/studio` means Claude rejected the call: check `ANTHROPIC_API_KEY` and the
+  A `502` from `/api/ai/studio` means the model call failed: check `OPENROUTER_API_KEY` and the
   service logs. A `429` means the analyst's rate limit was hit.
 
 ## 5. If something breaks

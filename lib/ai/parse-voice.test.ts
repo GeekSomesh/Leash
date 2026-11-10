@@ -36,8 +36,8 @@ describe("parseVoiceFallback", () => {
 
 describe("parseVoicePayment", () => {
   // Tests must never need the network, so the pattern fallback runs even if a key is set.
-  it("uses the pattern fallback when Claude is off", async () => {
-    const parsed = await parseVoicePayment("send two thousand dollars to Arjun", { useClaude: false });
+  it("uses the pattern fallback when the AI is off", async () => {
+    const parsed = await parseVoicePayment("send two thousand dollars to Arjun", { useAi: false });
     expect(parsed.amountCents).toBe(200000);
     expect(parsed.payeeName).toBe("Arjun");
   });

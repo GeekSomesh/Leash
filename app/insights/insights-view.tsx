@@ -159,7 +159,18 @@ export function InsightsView({ licenseKey, aiEnabled }: { licenseKey?: string; a
         ))}
       </div>
 
-      {data && tab === "report" && <StudioReport data={data} licenseKey={licenseKey} aiEnabled={aiEnabled} />}
+      {data && tab === "report" && (
+        <div className="space-y-3">
+          {!licenseKey && (
+            <p className="rounded-lg bg-hold-soft px-3 py-2 text-sm text-hold">
+              AG Studio is running as a <strong>trial</strong>: the report works, with a watermark (AG Grid&apos;s own
+              licence banner appears in the browser console). Set <code className="font-mono text-xs">AG_STUDIO</code> in
+              .env.local and restart to remove it.
+            </p>
+          )}
+          <StudioReport data={data} licenseKey={licenseKey} aiEnabled={aiEnabled} />
+        </div>
+      )}
 
       {data && tab === "tables" && (
         <div className="space-y-8">

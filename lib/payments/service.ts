@@ -10,7 +10,7 @@
 
 import { and, eq, sql } from "drizzle-orm";
 import { explainDecision } from "@/lib/ai/explain";
-import { claudeConfigured } from "@/lib/ai/claude";
+import { aiConfigured } from "@/lib/ai/openrouter";
 import { appBaseUrl } from "@/lib/config";
 import { reviewPayment } from "@/lib/ai/review";
 import type { Db } from "@/lib/db/client";
@@ -67,7 +67,7 @@ export async function submitPayment(db: Db, agent: AgentRow, input: PaymentReque
   const now = options.now ?? new Date();
   const facts = await loadPolicyFacts(db, agent, request, now);
   const guardian = await guardianFor(db, agent.ownerId);
-  const reviewer = options.reviewer !== undefined ? options.reviewer : claudeConfigured() ? reviewPayment : null;
+  const reviewer = options.reviewer !== undefined ? options.reviewer : aiConfigured() ? reviewPayment : null;
 
   const decision = await decide({
     request,

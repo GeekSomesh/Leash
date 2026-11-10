@@ -24,7 +24,7 @@ export default function StudioReport({ data, licenseKey, aiEnabled }: { data: In
       <div className="flex flex-wrap items-center justify-between gap-2">
         <p className="text-sm text-muted">
           Built with AG Studio: click a bar or slice to cross-filter the page.
-          {aiEnabled ? " Ask the Leash analyst (Claude) to explain the numbers or add a widget." : " Add ANTHROPIC_API_KEY to talk to the Leash analyst."}
+          {aiEnabled ? " Ask the Leash analyst (AI) to explain the numbers or add a widget." : " Add OPENROUTER_API_KEY to talk to the Leash analyst."}
         </p>
         <div role="group" aria-label="Report mode" className="flex rounded-lg border border-line bg-card p-0.5 text-sm font-semibold">
           {(["view", "edit"] as const).map((m) => (

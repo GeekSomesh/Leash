@@ -43,24 +43,24 @@ submission as a judge would (fresh browser, hosted URL, all four scenes).
    `APP_BASE_URL=https://<host> npm run mcp:smoke` from a clone.
 6. Insights: `/insights` is an AG Studio report. Click a bar or slice (say, "Gift agent") to filter the rest
    of the page; the second page shows the PayPal ledger. Press **Edit** to see the Leash meter in the
-   widget menu and to open the AI panel. There, the Leash analyst (Claude) answers questions like "What
+   widget menu and to open the AI panel. There, the Leash analyst (an AI agent) answers questions like "What
    did Leash stop?" and can add a chart. **Tables (AG Grid)** shows the same data as grids.
 
 Sandbox buyer credentials for the approval step: `<BUYER EMAIL / PASSWORD or "use your own sandbox account">`.
 
 ## AI tools used (Devpost disclosure)
 
-- **Claude Opus 5.5** via the Anthropic API, all server-side through `lib/ai/claude.ts`:
-  - payment review (structured outputs: item categories, task fit, injection, scam) — can only escalate,
-    fails closed;
+- **AI via OpenRouter** — `nvidia/nemotron-3-ultra-550b-a55b:free` through `lib/ai/openrouter.ts`
+  (OpenAI-compatible chat completions; JSON answers validated against zod schemas):
+  - payment review (item categories, task fit, injection, scam) — can only escalate, fails closed;
   - plain explanations (owner, guardian, or the older adult; calm, never shaming);
   - plain-English → policy compiler (with a code-generated read-back of the exact JSON);
   - voice-request parsing on `/assistant` (with a deterministic pattern fallback);
-  - the Leash analyst on `/insights`: an AG Studio agent whose turns run on Claude through
+  - the Leash analyst on `/insights`: an AG Studio agent whose turns run on the model through
     `/api/ai/studio` (read-only; it can add charts to the report but never touches money).
 - Claude Code assisted with writing code during the submission period.
-- Without an `ANTHROPIC_API_KEY` Leash still decides: the deterministic rules engine and fixed-pattern
-  detectors cover every demo scene (the console says "Claude off").
+- Without an `OPENROUTER_API_KEY` Leash still decides: the deterministic rules engine and fixed-pattern
+  detectors cover every demo scene (the console says "AI off").
 
 ## Sponsor tools used
 
@@ -74,7 +74,7 @@ Sandbox buyer credentials for the approval step: `<BUYER EMAIL / PASSWORD or "us
     described to the AI.
   - **Theme:** Leash's colours and type through `studioTheme.withParams`.
   - **AI:** the Studio Agent Framework with a custom LLM adapter, so the Leash analyst and AG Studio's
-    built-in agents run on Claude Opus 5.5 on the server.
+    built-in agents run on the OpenRouter-hosted model on the server.
 - **AG Grid Community** (`ag-grid-community` 36.2.0, `ag-grid-react` 36.2.0, MIT): the insights tables
   (decisions, what Leash stopped, PayPal ledger, agents), themed with the Theming API from Leash's design
   tokens.
@@ -94,7 +94,7 @@ Sandbox buyer credentials for the approval step: `<BUYER EMAIL / PASSWORD or "us
   view with the quoted scam lines; Decline; the hold is released.
 - **2:10–2:30:** `/insights` on AG Studio: click "Gift agent" to filter the page, point at the Leash meter,
   and ask the Leash analyst "What did Leash stop?"
-- **2:30–2:50:** how it's built (rules engine + detectors + Claude escalate-only; MCP server; PayPal
+- **2:30–2:50:** how it's built (rules engine + detectors + escalate-only AI review; MCP server; PayPal
   authorizations, partial captures, voids, payouts, verified webhooks). Close on the tagline.
 
 ## Devpost form fields checklist
@@ -104,8 +104,8 @@ Sandbox buyer credentials for the approval step: `<BUYER EMAIL / PASSWORD or "us
 - [ ] YouTube demo video link
 - [ ] Hosted URL + the testing instructions above
 - [ ] "Uses PayPal" — sandbox: Orders (authorize), partial captures, voids, Payouts, verified webhooks, MCP
-- [ ] "Uses AI" — Claude Opus 5.5 structured reviews, explanations, compiler, voice parsing
+- [ ] "Uses AI" — OpenRouter-hosted AI (Nemotron Ultra 550B): reviews, explanations, compiler, voice parsing
 - [ ] Sponsor questions: AG Studio (linked data sources, pre-built report, Leash meter custom widget, theme,
-      Claude agents through the Studio Agent Framework), AG Grid Community (tables), Render
+      AI agents through the Studio Agent Framework), AG Grid Community (tables), Render
 - [ ] Set `AG_STUDIO` on Render if you have a licence key, so the hosted report has no trial watermark
 - [ ] Team and built-during-hackathon attestation (started Nov 1, 2026)

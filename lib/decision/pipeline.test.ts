@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { ClaudeUnavailableError } from "@/lib/ai/claude";
+import { AiUnavailableError } from "@/lib/ai/openrouter";
 import type { Review } from "@/lib/ai/review";
 import type { Mandate, Policy } from "@/lib/domain/schemas";
 import {
@@ -99,9 +99,9 @@ describe("decide", () => {
     expect(result.hold?.coolingOffUntil).toBe("2026-11-05T15:30:00.000Z");
   });
 
-  it("fails closed: if Claude is configured but can't answer, a person checks", async () => {
+  it("fails closed: if the AI review is configured but can't answer, a person checks", async () => {
     const failing = async () => {
-      throw new ClaudeUnavailableError("timeout");
+      throw new AiUnavailableError("timeout");
     };
     const result = await decide({ request: telescopePurchase(), context: context(giftAgentPolicy), reviewer: failing, hasGuardian: false });
     expect(result.outcome).toBe("hold");

@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { claudeConfigured } from "@/lib/ai/claude";
+import { aiConfigured } from "@/lib/ai/openrouter";
 import { compilePolicy } from "@/lib/ai/compile-policy";
 import { errorResponse, readJson } from "@/lib/http";
 
@@ -12,7 +12,7 @@ const Body = z.object({
 
 /** Compiles plain-English rules into a policy and reads it back in plain English. */
 export async function POST(request: Request) {
-  if (!claudeConfigured()) return Response.json({ error: "Set ANTHROPIC_API_KEY to compile policies from plain English." }, { status: 503 });
+  if (!aiConfigured()) return Response.json({ error: "Set OPENROUTER_API_KEY to compile policies from plain English." }, { status: 503 });
   try {
     return Response.json(await compilePolicy(Body.parse(await readJson(request))));
   } catch (error) {

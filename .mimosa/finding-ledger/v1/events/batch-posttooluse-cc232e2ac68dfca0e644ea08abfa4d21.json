@@ -1,0 +1,96 @@
+{
+  "schemaVersion": "mimosa-finding-ledger-batch/v1",
+  "batchId": "posttooluse-cc232e2ac68dfca0e644ea08abfa4d21",
+  "runId": null,
+  "runStatus": "completed",
+  "coverage": {
+    "status": "complete",
+    "reasons": []
+  },
+  "source": {
+    "component": "zcode-hook",
+    "operationId": "PostToolUse"
+  },
+  "revision": null,
+  "diffHash": null,
+  "rulesVersion": null,
+  "sessionHash": "20378a0c0633ff6ee38a117b600e694dd928c8daaf04e1ffb9d4860f76a4980e",
+  "reportRef": null,
+  "events": [
+    {
+      "eventId": "hook-4473079a4e7575980397e80289f2ac65",
+      "findingId": "mimosa-bb16e5b89149fe83d91aaa61",
+      "type": "static_fix_verified",
+      "at": "2026-11-08T08:55:10.201Z",
+      "identity": {
+        "projectRelativeFile": "lib/ai/parse-voice.ts",
+        "ruleId": "security",
+        "codeEvidenceHash": "1b4b2aa897c0165b23cfea48024466002ec0efa73e18e6a08d603aa267fdb763",
+        "confidence": "stable"
+      },
+      "scope": "direct",
+      "line": 71,
+      "endLine": 71,
+      "reasonCode": "static_rescan_passed",
+      "reportedToAgent": false,
+      "evidence": {
+        "kind": "static_scan",
+        "boundary": "observed",
+        "producer": "deterministic",
+        "evidenceHash": "1b4b2aa897c0165b23cfea48024466002ec0efa73e18e6a08d603aa267fdb763"
+      },
+      "sequence": 0
+    },
+    {
+      "eventId": "hook-f153b37882850992122e785b2a876b16",
+      "findingId": "mimosa-fd0740620258960b8f6c8cd1",
+      "type": "static_fix_verified",
+      "at": "2026-11-08T08:55:10.201Z",
+      "identity": {
+        "projectRelativeFile": "lib/ai/parse-voice.ts",
+        "ruleId": "security",
+        "codeEvidenceHash": "0f377751795fb67d9ae287cd8563ed602c2990756a8f7b536d0c9878a44d7267",
+        "confidence": "stable"
+      },
+      "scope": "direct",
+      "line": 73,
+      "endLine": 73,
+      "reasonCode": "static_rescan_passed",
+      "reportedToAgent": false,
+      "evidence": {
+        "kind": "static_scan",
+        "boundary": "observed",
+        "producer": "deterministic",
+        "evidenceHash": "0f377751795fb67d9ae287cd8563ed602c2990756a8f7b536d0c9878a44d7267"
+      },
+      "sequence": 1
+    },
+    {
+      "eventId": "hook-f5170a8d82b9e6afe4fdf64e945bb7ab",
+      "findingId": "mimosa-af79be041df87dee6cf0d022",
+      "type": "static_fix_verified",
+      "at": "2026-11-08T08:55:10.201Z",
+      "identity": {
+        "projectRelativeFile": "lib/ai/parse-voice.ts",
+        "ruleId": "security",
+        "codeEvidenceHash": "66451f798397689d672ed209e4a5c3dcf2fc1679bd9e60c51b21850d64933152",
+        "confidence": "stable"
+      },
+      "scope": "direct",
+      "line": 81,
+      "endLine": 81,
+      "reasonCode": "static_rescan_passed",
+      "reportedToAgent": false,
+      "evidence": {
+        "kind": "static_scan",
+        "boundary": "observed",
+        "producer": "deterministic",
+        "evidenceHash": "66451f798397689d672ed209e4a5c3dcf2fc1679bd9e60c51b21850d64933152"
+      },
+      "sequence": 2
+    }
+  ],
+  "observedFindingIds": [],
+  "verifiedFiles": [],
+  "recordedAt": "2026-11-08T08:55:10.645Z"
+}

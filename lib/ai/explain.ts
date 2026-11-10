@@ -3,7 +3,7 @@
 
 import type { Decision, PaymentRequest } from "@/lib/domain/schemas";
 import { formatUsd } from "@/lib/money";
-import { askForText, claudeConfigured, ClaudeUnavailableError } from "./claude";
+import { askForText, aiConfigured, AiUnavailableError } from "./openrouter";
 
 export type Audience = "owner" | "guardian" | "payer";
 
@@ -22,7 +22,7 @@ export async function explainDecision(input: {
   resolvedStatus?: "declined" | "paid" | "failed";
 }): Promise<string> {
   const fallback = templateExplanation(input);
-  if (!claudeConfigured()) return fallback;
+  if (!aiConfigured()) return fallback;
 
   const prompt = `Language: ${input.language}
 Audience: ${input.audience === "payer" ? `${input.payerName}, who asked for the payment` : input.audience === "guardian" ? `${input.guardianName ?? "the guardian"}, who approves risky payments for ${input.payerName}` : `the owner, ${input.payerName}`}
@@ -36,7 +36,7 @@ ${input.decision.hold?.coolingOffUntil ? `Held until at least: ${input.decision.
   try {
     return await askForText({ system: SYSTEM, prompt, effort: "low", maxTokens: 2000 });
   } catch (error) {
-    if (error instanceof ClaudeUnavailableError) return fallback;
+    if (error instanceof AiUnavailableError) return fallback;
     throw error;
   }
 }

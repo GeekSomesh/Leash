@@ -1,6 +1,7 @@
-// AG Studio's LLM adapter for Claude. Studio drives the agent loop and runs the tools; each
-// model turn goes to Leash's server (/api/ai/studio), which calls Claude Opus 5.5 with the
-// key kept server-side. The final response is replayed as Studio's content events.
+// AG Studio's LLM adapter for Leash's AI model. Studio drives the agent loop and runs the
+// tools; each model turn goes to Leash's server (/api/ai/studio), which calls the
+// OpenRouter-hosted model with the key kept server-side. The final response is replayed as
+// Studio's content events.
 
 import type { AgAiEvent, AgLlmAdapter, AgLlmResponse } from "ag-studio";
 
@@ -23,7 +24,7 @@ function* contentEvents(response: AgLlmResponse): Generator<AgAiEvent> {
   }
 }
 
-export const claudeStudioAdapter: AgLlmAdapter = {
+export const studioAdapter: AgLlmAdapter = {
   executeTurn(request, options) {
     const complete: Promise<AgLlmResponse> = fetch("/api/ai/studio", {
       method: "POST",

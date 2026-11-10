@@ -5,7 +5,7 @@
 import { z } from "zod";
 import { PolicySchema, type Policy } from "@/lib/domain/schemas";
 import { describePolicy } from "@/lib/policy/describe";
-import { askForJson } from "./claude";
+import { askForJson } from "./openrouter";
 
 const CompiledSchema = z.object({
   policy: PolicySchema,

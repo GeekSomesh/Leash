@@ -1,6 +1,6 @@
 // Everything the Leash console shows, in one snapshot the browser polls.
 
-import { claudeConfigured } from "@/lib/ai/claude";
+import { aiConfigured } from "@/lib/ai/openrouter";
 import { databaseKind, type Db } from "@/lib/db/client";
 import { DEMO_IDS, resetDemo } from "@/lib/demo/seed";
 import type { Check, Decision, PaymentRequest } from "@/lib/domain/schemas";
@@ -49,7 +49,7 @@ export type PaymentView = {
 export type ConsoleState = {
   mode: {
     paypal: "sandbox" | "simulated";
-    claude: boolean;
+    ai: boolean;
     database: "postgres" | "pglite";
     /** Sandbox payee emails for Payouts (DEMO_* variables). Missing emails mean payouts are skipped. */
     payoutEmails: { merchants: boolean; people: boolean };
@@ -97,7 +97,7 @@ export async function getConsoleState(db: Db): Promise<ConsoleState> {
   return {
     mode: {
       paypal: paypalConfigured() ? "sandbox" : "simulated",
-      claude: claudeConfigured(),
+      ai: aiConfigured(),
       database: databaseKind(),
       payoutEmails: {
         merchants: Boolean(process.env.DEMO_MERCHANT_FRESHCART_EMAIL && process.env.DEMO_MERCHANT_ORBITTOYS_EMAIL),

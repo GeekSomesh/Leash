@@ -8,7 +8,7 @@ import { CheckIcon, SimulatedBadge, SourceTag } from "./bits";
 const GROUPS: { source: Check["source"]; title: string; note: string }[] = [
   { source: "rule", title: "Owner's rules", note: "Deterministic code. The only checks that can approve money." },
   { source: "heuristic", title: "Built-in detectors", note: "Fixed patterns for hidden instructions and scam language. No model needed." },
-  { source: "ai", title: "Claude's review", note: "Can only make the decision stricter, never looser." },
+  { source: "ai", title: "AI review", note: "Can only make the decision stricter, never looser." },
 ];
 
 export function DecisionTrace({ checks }: { checks: Check[] }) {
@@ -33,8 +33,8 @@ export function DecisionTrace({ checks }: { checks: Check[] }) {
                       <SourceTag source={check.source} />
                     </div>
                     <p className={`text-sm ${check.status === "skipped" ? "text-muted" : "text-ink-soft"}`}>{check.detail}</p>
-                    {check.quotes?.map((quote) => (
-                      <blockquote key={quote} className="mt-1 border-l-2 border-block/50 pl-2 text-sm italic text-ink">
+                    {check.quotes?.map((quote, index) => (
+                      <blockquote key={`${check.id}-${index}`} className="mt-1 border-l-2 border-block/50 pl-2 text-sm italic text-ink">
                         <span className="quote-mark">&ldquo;{quote}&rdquo;</span>
                       </blockquote>
                     ))}

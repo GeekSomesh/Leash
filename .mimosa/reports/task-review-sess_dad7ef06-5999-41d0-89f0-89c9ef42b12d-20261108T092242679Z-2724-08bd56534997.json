@@ -1,0 +1,543 @@
+{
+  "schema_version": "mimosa-task-review/v2",
+  "run_id": "20261108T092242679Z-2724-08bd56534997",
+  "run_status": "inconclusive",
+  "errors": [
+    {
+      "stage": "baseline-read",
+      "target": "next-env.d.ts",
+      "reason": "baseline_snapshot_unreadable: file is missing from task baseline"
+    }
+  ],
+  "coverage": {
+    "schema_version": "mimosa-hook-coverage/v1",
+    "status": "partial",
+    "scope": "hook_observed_diff",
+    "baseline": {
+      "complete": true,
+      "captured_files": 70,
+      "candidate_limit": 5000,
+      "truncated": false,
+      "enumeration_error_count": 0,
+      "snapshot_error_count": 0,
+      "compensated_target_count": 12
+    },
+    "change_tracking": {
+      "touched_observed": 12,
+      "touched_retained": 12,
+      "truncated": false,
+      "bash_mutation": true,
+      "bash_discovered": 13,
+      "bash_discovery_limit": 80,
+      "bash_discovery_truncated": false
+    },
+    "candidates": {
+      "eligible_files": 13,
+      "selected_files": 13,
+      "limit": 20,
+      "truncated": false
+    },
+    "scanning": {
+      "required_files": 13,
+      "scanned_files": 13,
+      "skipped_files": 0,
+      "failed_files": 0,
+      "project_checks_required": 0,
+      "project_checks_completed": 0
+    },
+    "notification": {
+      "eligible_findings": 0,
+      "detailed_findings": 0,
+      "detail_limit": 3,
+      "truncated": false
+    },
+    "reason_counts": {
+      "baseline_snapshot_unreadable": 1,
+      "project_check_failed": 1
+    },
+    "reasons": [
+      {
+        "code": "baseline_snapshot_unreadable",
+        "stage": "baseline-read",
+        "target": "next-env.d.ts",
+        "detail": "file is missing from task baseline",
+        "affects_completion": true
+      },
+      {
+        "code": "project_check_failed",
+        "stage": "baseline-read",
+        "target": "next-env.d.ts",
+        "detail": "baseline_snapshot_unreadable: file is missing from task baseline",
+        "affects_completion": true
+      }
+    ],
+    "reasons_truncated": false
+  },
+  "generated_at": "2026-11-08T09:22:42.679Z",
+  "session_id": "sess_dad7ef06-5999-41d0-89f0-89c9ef42b12d",
+  "target": ".",
+  "revision": "d29e3453d4fc20b9dda06197d1aa4247f7a5d00c",
+  "rules_version": "unavailable",
+  "diff_hash": "a2c602ede63b0ad6316bf9a4a4281ed04ddd0e2aa4e6e10a75f8f8def1af5f96",
+  "diff": {
+    "algorithm": "sha256",
+    "changed_file_count": 13,
+    "changed_files": [
+      {
+        "file": "app/_components/console.tsx",
+        "ranges": [
+          {
+            "start": 3,
+            "end": 3
+          },
+          {
+            "start": 19,
+            "end": 29
+          },
+          {
+            "start": 46,
+            "end": 47
+          },
+          {
+            "start": 100,
+            "end": 129
+          },
+          {
+            "start": 151,
+            "end": 158
+          },
+          {
+            "start": 254,
+            "end": 261
+          },
+          {
+            "start": 294,
+            "end": 301
+          },
+          {
+            "start": 357,
+            "end": 426
+          }
+        ],
+        "before_hash": "44e9cfad4940baee487a214e7886971da0ceeeb6c0a3860e20dada5b36f00abe",
+        "after_hash": "532d85644d32087eb6d088602b5ff68e6353eefaa34a87a5aa9afab3d185f205"
+      },
+      {
+        "file": "app/api/agents/[id]/policy/route.ts",
+        "ranges": [
+          {
+            "start": 1,
+            "end": 32
+          }
+        ],
+        "before_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "after_hash": "2703e05f7406f4de4c14a3681e69988ecc0f1c65fda8e5795a4b0ef85ec9a3a0"
+      },
+      {
+        "file": "app/api/assistant/route.ts",
+        "ranges": [
+          {
+            "start": 1,
+            "end": 53
+          }
+        ],
+        "before_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "after_hash": "296a7a8dea46269ad3931b904808da9dcf820dba1014826df725d4d2edbadb88"
+      },
+      {
+        "file": "app/api/insights/route.ts",
+        "ranges": [
+          {
+            "start": 1,
+            "end": 114
+          }
+        ],
+        "before_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "after_hash": "065108c0f8c61bd01a858adcfe537145dbe52024b936c7427897a4ba11090569"
+      },
+      {
+        "file": "app/assistant/assistant-view.tsx",
+        "ranges": [
+          {
+            "start": 1,
+            "end": 270
+          }
+        ],
+        "before_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "after_hash": "1378651de10df36a9cf048d9daf4916f584a8b15673266df7e7a799144d33093"
+      },
+      {
+        "file": "app/assistant/page.tsx",
+        "ranges": [
+          {
+            "start": 1,
+            "end": 9
+          }
+        ],
+        "before_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "after_hash": "1126d966fcb275b6226f7ed840c10b2c721d6cfa057317b2fea5088cbc11ee5b"
+      },
+      {
+        "file": "app/insights/insights-view.tsx",
+        "ranges": [
+          {
+            "start": 1,
+            "end": 225
+          }
+        ],
+        "before_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "after_hash": "81363010ec09ac9ae079f86a6850b2248557d9af02d1373215654440d2feba28"
+      },
+      {
+        "file": "app/insights/page.tsx",
+        "ranges": [
+          {
+            "start": 1,
+            "end": 8
+          }
+        ],
+        "before_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "after_hash": "5b96c83bfc6657ecb55618bb9fb94d2a662f800a643e89ecfd70ee9847cc2520"
+      },
+      {
+        "file": "lib/ai/parse-voice.test.ts",
+        "ranges": [
+          {
+            "start": 1,
+            "end": 44
+          }
+        ],
+        "before_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "after_hash": "8b363fca74a3298d3770fba139258d6046a672d853f127b08d63e7606671bf99"
+      },
+      {
+        "file": "lib/ai/parse-voice.ts",
+        "ranges": [
+          {
+            "start": 1,
+            "end": 123
+          }
+        ],
+        "before_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "after_hash": "cda715e84aba7282f297bcb7bc086ce0b2ee65f46338efa9f1f76909212fea16"
+      },
+      {
+        "file": "lib/console-state.ts",
+        "ranges": [
+          {
+            "start": 13,
+            "end": 13
+          },
+          {
+            "start": 50,
+            "end": 56
+          },
+          {
+            "start": 72,
+            "end": 72
+          },
+          {
+            "start": 86,
+            "end": 91
+          },
+          {
+            "start": 98,
+            "end": 106
+          },
+          {
+            "start": 122,
+            "end": 122
+          }
+        ],
+        "before_hash": "907f356b6da215bc2dcec3e5d73540e5f8ea9e584a797eadb8433b8b5535eeee",
+        "after_hash": "2441f409c137ba508dc8ccf622f1195f7e323bd979abcddd265d7aad792f8348"
+      },
+      {
+        "file": "lib/insights-data.ts",
+        "ranges": [
+          {
+            "start": 1,
+            "end": 61
+          }
+        ],
+        "before_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "after_hash": "c92eb740eb4c1f44b5e480f5b273563b41a2b84012ed0f945877e2ec2fc644e6"
+      },
+      {
+        "file": "next-env.d.ts",
+        "ranges": [
+          {
+            "start": 1,
+            "end": 7
+          }
+        ],
+        "before_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "after_hash": "b8b3a344484b959af5e4e3fc1a1609dac3cb9ece0cdeb6c145be29bc4c491000"
+      }
+    ]
+  },
+  "timing": {
+    "started_at": "2026-11-08T09:22:40.766Z",
+    "completed_at": "2026-11-08T09:22:42.679Z",
+    "duration_ms": 1913,
+    "measurement": "hook_wall_clock"
+  },
+  "tokens": {
+    "input": 0,
+    "output": 0,
+    "total": 0,
+    "model_calls": 0,
+    "measurement": "known-zero"
+  },
+  "telemetry": {
+    "schemaVersion": "mimosa-gate-telemetry/v1",
+    "profile": "gate",
+    "operation": "Stop",
+    "outcome": "partial/INCONCLUSIVE",
+    "latencyMs": 1913,
+    "peakMemoryBytes": 140328960,
+    "memoryMeasurement": "max-observed-process-rss",
+    "scannedFiles": 13,
+    "cache": {
+      "hits": 0,
+      "misses": 0,
+      "measurement": "not-applicable"
+    },
+    "denyCount": 0,
+    "tokens": {
+      "input": 0,
+      "output": 0,
+      "total": 0,
+      "modelCalls": 0,
+      "measurement": "known-zero"
+    }
+  },
+  "finding_count": 0,
+  "rewake_finding_count": 0,
+  "evidence_boundary": {
+    "scan": "candidate",
+    "static_fix_verification": "observed_static_only",
+    "runtime_verification": "not_performed"
+  },
+  "finding_events": [
+    {
+      "finding_id": "mimosa-bb16e5b89149fe83d91aaa61",
+      "file": "lib/ai/parse-voice.ts",
+      "line": 71,
+      "rule_id": "security",
+      "severity": "high",
+      "category": "命令注入",
+      "status": "blocked",
+      "decision": "deny",
+      "at": "2026-11-08T08:53:56.530Z",
+      "evidence": {
+        "kind": "source",
+        "boundary": "candidate",
+        "producer": "deterministic",
+        "source": "semgrep",
+        "evidence_hash": "1b4b2aa897c0165b23cfea48024466002ec0efa73e18e6a08d603aa267fdb763",
+        "runtime_oracle": false
+      }
+    },
+    {
+      "finding_id": "mimosa-fd0740620258960b8f6c8cd1",
+      "file": "lib/ai/parse-voice.ts",
+      "line": 73,
+      "rule_id": "security",
+      "severity": "high",
+      "category": "命令注入",
+      "status": "blocked",
+      "decision": "deny",
+      "at": "2026-11-08T08:53:56.530Z",
+      "evidence": {
+        "kind": "source",
+        "boundary": "candidate",
+        "producer": "deterministic",
+        "source": "semgrep",
+        "evidence_hash": "0f377751795fb67d9ae287cd8563ed602c2990756a8f7b536d0c9878a44d7267",
+        "runtime_oracle": false
+      }
+    },
+    {
+      "finding_id": "mimosa-af79be041df87dee6cf0d022",
+      "file": "lib/ai/parse-voice.ts",
+      "line": 81,
+      "rule_id": "security",
+      "severity": "high",
+      "category": "命令注入",
+      "status": "blocked",
+      "decision": "deny",
+      "at": "2026-11-08T08:53:56.530Z",
+      "evidence": {
+        "kind": "source",
+        "boundary": "candidate",
+        "producer": "deterministic",
+        "source": "semgrep",
+        "evidence_hash": "66451f798397689d672ed209e4a5c3dcf2fc1679bd9e60c51b21850d64933152",
+        "runtime_oracle": false
+      }
+    },
+    {
+      "finding_id": "mimosa-bb16e5b89149fe83d91aaa61",
+      "file": "lib/ai/parse-voice.ts",
+      "line": 71,
+      "rule_id": "security",
+      "severity": "high",
+      "category": "命令注入",
+      "status": "fixed_candidate",
+      "decision": "repair_observed",
+      "at": "2026-11-08T08:55:10.201Z",
+      "evidence": {
+        "kind": "source",
+        "boundary": "candidate",
+        "producer": "deterministic",
+        "source": "semgrep",
+        "evidence_hash": "1b4b2aa897c0165b23cfea48024466002ec0efa73e18e6a08d603aa267fdb763",
+        "candidate_before_evidence_hash": "1b4b2aa897c0165b23cfea48024466002ec0efa73e18e6a08d603aa267fdb763",
+        "post_change_evidence_hash_at_previous_location": "2e675e803f9c940f28fa2d0edeb40de4275faa1676f26ade94bc35f5fb5266e9",
+        "runtime_oracle": false,
+        "verification": {
+          "method": "mimosa-posttool-static-rescan",
+          "finding_absent": true,
+          "runtime_oracle": false
+        }
+      }
+    },
+    {
+      "finding_id": "mimosa-bb16e5b89149fe83d91aaa61",
+      "file": "lib/ai/parse-voice.ts",
+      "line": 71,
+      "rule_id": "security",
+      "severity": "high",
+      "category": "命令注入",
+      "status": "static_verified",
+      "decision": "static_rescan_passed",
+      "at": "2026-11-08T08:55:10.201Z",
+      "evidence": {
+        "kind": "static_scan",
+        "boundary": "observed",
+        "producer": "deterministic",
+        "source": "semgrep",
+        "evidence_hash": "1b4b2aa897c0165b23cfea48024466002ec0efa73e18e6a08d603aa267fdb763",
+        "candidate_before_evidence_hash": "1b4b2aa897c0165b23cfea48024466002ec0efa73e18e6a08d603aa267fdb763",
+        "post_change_evidence_hash_at_previous_location": "2e675e803f9c940f28fa2d0edeb40de4275faa1676f26ade94bc35f5fb5266e9",
+        "runtime_oracle": false,
+        "verification": {
+          "method": "mimosa-posttool-static-rescan",
+          "finding_absent": true,
+          "runtime_oracle": false
+        }
+      }
+    },
+    {
+      "finding_id": "mimosa-fd0740620258960b8f6c8cd1",
+      "file": "lib/ai/parse-voice.ts",
+      "line": 73,
+      "rule_id": "security",
+      "severity": "high",
+      "category": "命令注入",
+      "status": "fixed_candidate",
+      "decision": "repair_observed",
+      "at": "2026-11-08T08:55:10.201Z",
+      "evidence": {
+        "kind": "source",
+        "boundary": "candidate",
+        "producer": "deterministic",
+        "source": "semgrep",
+        "evidence_hash": "0f377751795fb67d9ae287cd8563ed602c2990756a8f7b536d0c9878a44d7267",
+        "candidate_before_evidence_hash": "0f377751795fb67d9ae287cd8563ed602c2990756a8f7b536d0c9878a44d7267",
+        "post_change_evidence_hash_at_previous_location": "0d2f98702fed9e6caa7cc11dc30e1387667178033453a12815cf541e2943dcdf",
+        "runtime_oracle": false,
+        "verification": {
+          "method": "mimosa-posttool-static-rescan",
+          "finding_absent": true,
+          "runtime_oracle": false
+        }
+      }
+    },
+    {
+      "finding_id": "mimosa-fd0740620258960b8f6c8cd1",
+      "file": "lib/ai/parse-voice.ts",
+      "line": 73,
+      "rule_id": "security",
+      "severity": "high",
+      "category": "命令注入",
+      "status": "static_verified",
+      "decision": "static_rescan_passed",
+      "at": "2026-11-08T08:55:10.201Z",
+      "evidence": {
+        "kind": "static_scan",
+        "boundary": "observed",
+        "producer": "deterministic",
+        "source": "semgrep",
+        "evidence_hash": "0f377751795fb67d9ae287cd8563ed602c2990756a8f7b536d0c9878a44d7267",
+        "candidate_before_evidence_hash": "0f377751795fb67d9ae287cd8563ed602c2990756a8f7b536d0c9878a44d7267",
+        "post_change_evidence_hash_at_previous_location": "0d2f98702fed9e6caa7cc11dc30e1387667178033453a12815cf541e2943dcdf",
+        "runtime_oracle": false,
+        "verification": {
+          "method": "mimosa-posttool-static-rescan",
+          "finding_absent": true,
+          "runtime_oracle": false
+        }
+      }
+    },
+    {
+      "finding_id": "mimosa-af79be041df87dee6cf0d022",
+      "file": "lib/ai/parse-voice.ts",
+      "line": 81,
+      "rule_id": "security",
+      "severity": "high",
+      "category": "命令注入",
+      "status": "fixed_candidate",
+      "decision": "repair_observed",
+      "at": "2026-11-08T08:55:10.201Z",
+      "evidence": {
+        "kind": "source",
+        "boundary": "candidate",
+        "producer": "deterministic",
+        "source": "semgrep",
+        "evidence_hash": "66451f798397689d672ed209e4a5c3dcf2fc1679bd9e60c51b21850d64933152",
+        "candidate_before_evidence_hash": "66451f798397689d672ed209e4a5c3dcf2fc1679bd9e60c51b21850d64933152",
+        "post_change_evidence_hash_at_previous_location": "f1ba62c8d4172f0ef610bbcb8f274d7502af2f2d88c0cb9e8fa0c668de540e45",
+        "runtime_oracle": false,
+        "verification": {
+          "method": "mimosa-posttool-static-rescan",
+          "finding_absent": true,
+          "runtime_oracle": false
+        }
+      }
+    },
+    {
+      "finding_id": "mimosa-af79be041df87dee6cf0d022",
+      "file": "lib/ai/parse-voice.ts",
+      "line": 81,
+      "rule_id": "security",
+      "severity": "high",
+      "category": "命令注入",
+      "status": "static_verified",
+      "decision": "static_rescan_passed",
+      "at": "2026-11-08T08:55:10.201Z",
+      "evidence": {
+        "kind": "static_scan",
+        "boundary": "observed",
+        "producer": "deterministic",
+        "source": "semgrep",
+        "evidence_hash": "66451f798397689d672ed209e4a5c3dcf2fc1679bd9e60c51b21850d64933152",
+        "candidate_before_evidence_hash": "66451f798397689d672ed209e4a5c3dcf2fc1679bd9e60c51b21850d64933152",
+        "post_change_evidence_hash_at_previous_location": "f1ba62c8d4172f0ef610bbcb8f274d7502af2f2d88c0cb9e8fa0c668de540e45",
+        "runtime_oracle": false,
+        "verification": {
+          "method": "mimosa-posttool-static-rescan",
+          "finding_absent": true,
+          "runtime_oracle": false
+        }
+      }
+    }
+  ],
+  "findings": [],
+  "artifacts": {
+    "immutable_report": ".mimosa/reports/task-review-sess_dad7ef06-5999-41d0-89f0-89c9ef42b12d-20261108T092242679Z-2724-08bd56534997.json",
+    "latest_report": ".mimosa/reports/task-review-sess_dad7ef06-5999-41d0-89f0-89c9ef42b12d.json",
+    "history_summary": ".mimosa/history/run-20261108T092242679Z-2724-08bd56534997.json"
+  }
+}

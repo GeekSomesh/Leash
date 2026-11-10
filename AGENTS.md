@@ -5,8 +5,10 @@
 - Money is integer cents everywhere (`lib/money.ts`). Convert to PayPal decimal strings only in `lib/paypal/`.
 - PayPal is sandbox-only (`lib/paypal/client.ts`). Never add a live mode: the hackathon requires the sandbox.
 - Every money-moving PayPal call passes a `PayPal-Request-Id` (idempotency).
-- The golden rule: only `lib/policy/evaluate.ts` (deterministic) or a person can approve money. Claude's
+- The golden rule: only `lib/policy/evaluate.ts` (deterministic) or a person can approve money. The AI
   review and the detectors can only make a decision stricter (`lib/decision/pipeline.ts`). Keep it that way.
-- Claude calls go through `lib/ai/claude.ts` (Opus 5.5, explicit effort, refusal fallbacks, structured outputs).
-  Don't send `temperature`/`top_p`/`top_k` (rejected by API version 2026-10-21).
+- AI calls go through `lib/ai/openrouter.ts` (OpenRouter's OpenAI-compatible chat completions; model from
+  `OPENROUTER_MODEL`, default `nvidia/nemotron-3-ultra-550b-a55b:free`). JSON answers are requested in the
+  prompt, extracted and validated with zod (free models don't reliably support structured outputs); any
+  refusal, truncation or bad JSON throws `AiUnavailableError` — fail closed.
 - Run `npm test`, `npm run typecheck` and `npm run lint` before committing.

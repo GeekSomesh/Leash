@@ -100,8 +100,8 @@ export function ApproveView({ id }: { id: string }) {
                   {signals.map((check) => (
                     <li key={check.id} className="text-sm">
                       <p>{check.detail}</p>
-                      {check.quotes?.map((quote) => (
-                        <blockquote key={quote} className="mt-1 border-l-2 border-block/50 pl-2 italic">
+                      {check.quotes?.map((quote, index) => (
+                        <blockquote key={`${check.id}-${index}`} className="mt-1 border-l-2 border-block/50 pl-2 italic">
                           <span className="quote-mark">&ldquo;{quote}&rdquo;</span>
                         </blockquote>
                       ))}

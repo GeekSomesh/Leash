@@ -145,7 +145,7 @@ export function Console() {
           {state && (
             <div className="flex flex-wrap gap-2 text-xs">
               <ModePill on={state.mode.paypal === "sandbox"} label={state.mode.paypal === "sandbox" ? "PayPal sandbox connected" : "PayPal simulated: add sandbox keys"} />
-              <ModePill on={state.mode.claude} label={state.mode.claude ? "Claude Opus 5.5 reviewing" : "Claude off: rules and detectors only"} />
+              <ModePill on={state.mode.ai} label={state.mode.ai ? "AI reviewing via OpenRouter" : "AI off: rules and detectors only"} />
               <ModePill on label={state.mode.database === "postgres" ? "Postgres" : "Embedded Postgres"} />
             </div>
           )}
@@ -362,13 +362,13 @@ export function Console() {
             <h2 id="edit-rules-title" className="font-semibold">
               Rules for {editing.agentName}, in plain English
             </h2>
-            {!state?.mode.claude ? (
+            {!state?.mode.ai ? (
               <p className="mt-3 rounded-lg bg-hold-soft px-3 py-2 text-sm text-hold">
-                Editing rules needs Claude, which isn&apos;t set up on this server. Add <code className="font-mono text-xs">ANTHROPIC_API_KEY</code> to .env.local and restart.
+                Editing rules needs the AI model, which isn&apos;t set up on this server. Add <code className="font-mono text-xs">OPENROUTER_API_KEY</code> to .env.local and restart.
               </p>
             ) : (
               <>
-                <p className="mt-1 text-sm text-muted">Write the rules the way you would say them. Claude compiles them into the policy Leash enforces, and reads it back before you save.</p>
+                <p className="mt-1 text-sm text-muted">Write the rules the way you would say them. The AI compiles them into the policy Leash enforces, and reads it back before you save.</p>
                 <textarea
                   value={editing.rules}
                   onChange={(e) => setEditing({ ...editing, rules: e.target.value, compiled: null })}
@@ -402,7 +402,7 @@ export function Console() {
                     Cancel
                   </button>
                   <button type="button" onClick={() => void compileRules()} disabled={busy !== null || editing.rules.trim().length < 10} className="rounded-lg border border-line px-3 py-1.5 text-sm font-semibold hover:bg-paper disabled:opacity-50">
-                    {busy === "compile-rules" ? "Compiling…" : editing.compiled ? "Compile again" : "Compile with Claude"}
+                    {busy === "compile-rules" ? "Compiling…" : editing.compiled ? "Compile again" : "Compile with AI"}
                   </button>
                   <button
                     type="button"
@@ -415,7 +415,7 @@ export function Console() {
                 </div>
               </>
             )}
-            {!state?.mode.claude && (
+            {!state?.mode.ai && (
               <div className="mt-4 flex justify-end">
                 <button type="button" onClick={() => setEditing(null)} className="rounded-lg bg-brand px-3 py-1.5 text-sm font-semibold text-white">
                   Close

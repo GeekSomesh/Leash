@@ -71,7 +71,7 @@ const STATUS: Record<string, string> = {
   failed: "Failed",
   refunded: "Refunded",
 };
-const SOURCE: Record<string, string> = { rule: "Owner's rules", heuristic: "Built-in detector", ai: "Claude" };
+const SOURCE: Record<string, string> = { rule: "Owner's rules", heuristic: "Built-in detector", ai: "AI review" };
 const STEP: Record<string, string> = {
   authorization: "Hold placed",
   capture: "Captured",
@@ -161,7 +161,7 @@ export function buildDataSources(data: InsightsData): AgDataSourcesDefinition<Le
       {
         id: "stops",
         name: "Why Leash stopped payments",
-        description: "Each check that held or blocked a payment: which rule, detector or Claude check, and why.",
+        description: "Each check that held or blocked a payment: which rule, detector or AI check, and why.",
         data: stops,
         fields: [
           text("id", "Check", "high"),
