@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import type { ConsoleState } from "@/lib/console-state";
 import { SCENARIO_INFO, type ScenarioName } from "@/lib/demo/scenario-info";
-import { formatUsd } from "@/lib/money";
+import { formatUsd, valueToCents } from "@/lib/money";
 import { LeashMark, SimulatedBadge } from "./bits";
 import { PaymentCard } from "./payment-card";
 
@@ -45,6 +45,8 @@ export function Console() {
   const [connect, setConnect] = useState<{ agentName: string; token: string; mcpUrl: string } | null>(null);
   const [editing, setEditing] = useState<EditingRules | null>(null);
   const [compileError, setCompileError] = useState<string | null>(null);
+  const [allowAmount, setAllowAmount] = useState("150");
+  const [allowDays, setAllowDays] = useState(7);
 
   const refresh = useCallback(async () => {
     const res = await fetch("/api/state", { cache: "no-store" });
@@ -88,7 +90,9 @@ export function Console() {
   const reset = () => act("reset", async () => void (await post("/api/demo/reset")));
   const holdAllowance = () =>
     act("allowance", async () => {
-      const result = (await post("/api/allowances", { amountCents: 15000, days: 7 })) as { approveUrl: string | null };
+      const amountCents = valueToCents(allowAmount.trim().replace(/^\$/, ""));
+      if (amountCents < 100 || amountCents > 1_000_000) throw new Error("Enter an amount between $1 and $10,000.");
+      const result = (await post("/api/allowances", { amountCents, days: allowDays })) as { approveUrl: string | null };
       if (result.approveUrl) window.location.href = result.approveUrl;
     });
   const releaseAllowance = (id: string) => act(`void-${id}`, async () => void (await post(`/api/allowances/${id}/void`)));
@@ -277,9 +281,56 @@ export function Console() {
                 <p className="mt-3 text-sm">No allowance held yet.</p>
               )}
               {allowance?.status !== "active" && allowance?.status !== "awaiting_approval" && (
-                <button type="button" onClick={holdAllowance} disabled={busy !== null} className="mt-3 w-full rounded-lg bg-brand px-3 py-2 text-sm font-semibold text-white hover:bg-brand/90 disabled:opacity-50">
-                  Hold $150 in PayPal for 7 days
-                </button>
+                <form
+                  className="mt-3 space-y-2"
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    void holdAllowance();
+                  }}
+                >
+                  <div className="flex items-center gap-2 text-sm">
+                    <label htmlFor="allowance-amount" className="shrink-0 font-medium">
+                      Amount
+                    </label>
+                    <div className="relative flex-1">
+                      <span aria-hidden="true" className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-muted">
+                        $
+                      </span>
+                      <input
+                        id="allowance-amount"
+                        value={allowAmount}
+                        onChange={(e) => setAllowAmount(e.target.value)}
+                        inputMode="decimal"
+                        autoComplete="off"
+                        placeholder="150"
+                        className="w-full rounded-lg border border-line bg-card py-1.5 pl-6 pr-2 tabular-nums"
+                      />
+                    </div>
+                    <label htmlFor="allowance-days" className="shrink-0 font-medium">
+                      for
+                    </label>
+                    <select
+                      id="allowance-days"
+                      value={allowDays}
+                      onChange={(e) => setAllowDays(Number(e.target.value))}
+                      className="rounded-lg border border-line bg-card px-2 py-1.5"
+                    >
+                      {[1, 7, 14, 30].map((d) => (
+                        <option key={d} value={d}>
+                          {d} {d === 1 ? "day" : "days"}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <button
+                    type="submit"
+                    disabled={busy !== null || !/^\$?\d+(\.\d{1,2})?$/.test(allowAmount.trim())}
+                    className="w-full rounded-lg bg-brand px-3 py-2 text-sm font-semibold text-white hover:bg-brand/90 disabled:opacity-50"
+                  >
+                    {busy === "allowance" ? "Holding…" : "Hold in PayPal"}
+                  </button>
+                  <p className="text-xs text-muted">Between $1 and $10,000. With sandbox keys, PayPal asks you to approve the hold.</p>
+                </form>
               )}
             </section>
 

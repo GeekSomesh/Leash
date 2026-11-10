@@ -9,7 +9,7 @@ import { telescopePurchase } from "@/lib/demo/fixtures";
 import { DEMO_IDS, resetDemo } from "@/lib/demo/seed";
 import { runScenario } from "@/lib/demo/scenarios";
 import { findAgentByToken } from "./queries";
-import { agentOrThrow, LeashError, refundPayment, resolveHeldPayment, submitPayment, voidAllowance, type ServiceOptions } from "./service";
+import { agentOrThrow, LeashError, refundPayment, requestAllowance, resolveHeldPayment, submitPayment, voidAllowance, type ServiceOptions } from "./service";
 
 const NOW = new Date("2026-11-05T15:00:00Z");
 const options: ServiceOptions = { now: NOW, reviewer: null, simulatePayPal: true };
@@ -86,6 +86,17 @@ describe("payment service", () => {
     const second = await runScenario(db, "telescope", options);
     expect(second.status).toBe("blocked");
     expect(second.decision.checks.find((c) => c.id === "mandate")?.status).toBe("block");
+  });
+
+  it("holds an allowance of any amount and duration the owner asks for", async () => {
+    const allowance = await requestAllowance(db, { ownerId: DEMO_IDS.priya, amountCents: 8500, days: 14 }, options);
+    expect(allowance.amountCents).toBe(8500);
+    expect(allowance.status).toBe("active");
+    expect(allowance.periodEnd.getTime() - (options.now ?? new Date()).getTime()).toBe(14 * 24 * 60 * 60 * 1000);
+    // The stored row matches what was asked for (nothing hardcoded).
+    const [row] = await db.select().from(allowances).where(eq(allowances.id, allowance.id));
+    expect(row!.amountCents).toBe(8500);
+    expect(row!.amountCents - row!.capturedCents).toBe(8500);
   });
 
   it("releases the unspent allowance", async () => {
